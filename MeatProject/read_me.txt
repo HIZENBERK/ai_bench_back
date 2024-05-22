@@ -1,13 +1,31 @@
+일단 시작하기 앞서 이성재 개폐급
+
+프로젝트 폴더 만들고 그 안에 가상환경 설치
+vscode의 경우 ctrl + shift + P 입력
+interpreter에서 가상환경 선택
+
+프롬픝트 cmd로 연 후
+pip list
+pip 리스트 확인 후 없는것들 설치
+django
+djangorestframework
+
+
+python manage.py makemigrations
+python manage.py migrate
+
+
+//이미 있을 수도 있음
+superuser 생성
+python manage.py createsuperuser
+
 superuser : admin
 password : 1234
 
 테이블 데이터 타입이 좀 문제임  intiger, char, date가 제대로 적용이 안되는 듯함, 선언에 문제가 있을 수도 있음
 
-pip list 확인 후 djangorestframework 없으면 install
 
 터미널에 pip freeze > requiremnets.txt
 이건 효과가 제대로 있는건지 모르겠음, 안하고도 됐던거 같음
-
-이후 migrate 진행할 것
 
 그 뒤 runserver 하면 아마 될것
