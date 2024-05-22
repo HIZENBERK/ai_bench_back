@@ -1,16 +1,19 @@
 from rest_framework import serializers
-from .models import EmpInfo, LoginInfo, Order, Stock, Product
+from .models import CustomUser, Order, Stock, Product
 
-class EmpInfoserializers(serializers.ModelSerializer):
+# class EmpInfoserializers(serializers.ModelSerializer):
+#     class Meta:
+#         model = EmpInfo
+#         fields = '__all__'
+#
+# class LoginInfoserializers(serializers.ModelSerializer):
+#     class Meta:
+#         model = LoginInfo
+#         fields = '__all__'
+class CustomUserserializers(serializers.ModelSerializer):
     class Meta:
-        model = EmpInfo
+        model = CustomUser
         fields = '__all__'
-
-class LoginInfoserializers(serializers.ModelSerializer):
-    class Meta:
-        model = LoginInfo
-        fields = '__all__'
-
 class Orderserializers(serializers.ModelSerializer):
     class Meta:
         model = Order

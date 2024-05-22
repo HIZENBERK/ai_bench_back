@@ -1,83 +1,144 @@
 from typing import Any, Iterable
+
+from django.contrib.auth import get_user_model
+from django.contrib.auth.base_user import BaseUserManager, AbstractBaseUser
+from django.contrib.auth.models import AbstractUser, PermissionsMixin, User
 from django.db import models
 from django.utils import timezone
 from django.utils.crypto import get_random_string
 import datetime
+from rest_framework.authtoken.models import Token
+
+class CustomUserManager(BaseUserManager):
+    def create_user(self, username, EmpNo, Position, password=None, **extra_fields):
+        if not EmpNo:
+            raise ValueError('The EmpNo field must be set')
+        user = self.model(username=username, EmpNo=EmpNo, Position=Position, **extra_fields)
+        if password:
+            user.set_password(password)
+        else:
+            user.set_password(self.make_random_password())
+        user.save(using=self._db)
+        return user
+
+    def create_superuser(self, username, EmpNo, Position, password=None, **extra_fields):
+        extra_fields.setdefault('is_admin', True)
+        extra_fields.setdefault('is_superuser', True)
+        return self.create_user(username, EmpNo, Position, password, **extra_fields)
 
 
-# 회원정보
-class EmpInfo(models.Model):
-    EmpNo = models.CharField(max_length=6, primary_key=True, editable=False) #직원 번호
-    EmpName = models.CharField(max_length=20) #직원 이름
-    
+class CustomUser(AbstractUser):
+    username = models.CharField(max_length=6, unique=True)
+    EmpNo = models.CharField(max_length=6, unique=True, editable=False)
+
     OrderManager = 'OM'
     DissectionManager = 'DM'
-    WarehouseManger = 'WM'
+    WarehouseManager = 'WM'
     Admin = 'A'
     Manager = 'M'
     User = 'U'
-    
-    JobList = [ #직무
+
+    JobList = [  # 직무
         (OrderManager, '주문담당자'),
         (DissectionManager, '해체담당자'),
-        (WarehouseManger, '입고담당자'),
+        (WarehouseManager, '입고담당자'),
     ]
-    Job = models.CharField(max_length=100, choices=JobList, default=OrderManager)  #직무
-    
-    PositionList = [ #직위
+    Job = models.CharField(max_length=100, choices=JobList, default=OrderManager)
+
+    PositionList = [
         (Admin, '관리자'),
         (Manager, '매니저'),
         (User, '사용자'),
     ]
-    Position = models.CharField(max_length=100, choices=PositionList, default=User) #직위
-    
-    # 사원번호 랜덤 생성 / 앞의 1자리 권한번호 뒤의 랜덤 5자리  total 6자리
-    # 중복 적용 안함을 아직 구현하지 않음 ------해결 필요
-    
+    Position = models.CharField(max_length=100, choices=PositionList, default=User)  # 직위
+    is_active = models.BooleanField(default=True) #계정 사용가능 여부
+    is_admin = models.BooleanField(default=False)#항상 관리자로 유지하는지
+    is_anonymous = models.BooleanField(default=False)#항상 로그아웃을 유지할지
+    is_authenticated = models.BooleanField(default=False)#항상 로그인을 유지할지
+    #id로 사용할 필드
+    USERNAME_FIELD = 'EmpNo'
+    #필수 입력 필드
+    REQUIRED_FIELDS = ['username', 'Position']
+
+    objects = CustomUserManager()
+
     def save(self, *args, **kwargs):
+        if not self.EmpNo:
+            self.EmpNo = self.generate_emp_no()
+        if not self.password:
+            self.set_password(self.generate_password())
+        super().save(*args, **kwargs)
+
+    def generate_emp_no(self):
+        prefix = ''
         if self.Position == self.Admin:
-            self.EmpNo = '0' + get_random_string(length=5, allowed_chars='1234567890')
+            prefix = 'admin'
         elif self.Position == self.Manager:
-            self.EmpNo = '1' + get_random_string(length=5, allowed_chars='1234567890')
+            prefix = '1'+ get_random_string(length=5, allowed_chars='1234567890')
         elif self.Position == self.User:
-            self.EmpNo = '2' + get_random_string(length=5, allowed_chars='1234567890')
-        super(EmpInfo, self).save(*args, **kwargs)
-    
-    def is_jobselect(self):
-        return self.Position in {self.OrderManager, self.DissectionManager, self.WarehouseManger}
-    
-    def is_positionselect(self):
-        return self.Position in {self.Admin, self.Manager, self.User}
-    
-    def __str__(self):
-        return str(self.EmpNo)
+            prefix = '2'+ get_random_string(length=5, allowed_chars='1234567890')
+        return prefix
 
-    def was_published_recently(self):
-        return self.created_at >= timezone.now() - datetime.timedelta(days=1)
-
-# 로그인 정보
-class LoginInfo(models.Model):
-    EmpNo = models.ForeignKey("EmpInfo", on_delete=models.CASCADE, db_column="EmpNo") #직원 번호
-    PassWord = models.CharField(max_length=8, editable=False) #비밀번호
-    
-    # 비밀번호는 앞의 3자리는 영문 대소문자, 중간 3자리는 숫자, 뒤의 2자리는 해당 직원의 사원번호(EmpNo) 뒤의 2자리
-    # 비밀번호의 경우 중복은 상관 없음
-    def save(self, *args, **kwargs):
+    def generate_password(self):
         emp_no_str = str(self.EmpNo)
-        self.PassWord = get_random_string(length=3, allowed_chars='abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ') + get_random_string(length=3, allowed_chars='1234567890') + emp_no_str[4:]
-        super(LoginInfo, self).save(*args, **kwargs)
+        if emp_no_str == 'Admin':
+            random_part = '1234'
+        else:
+            random_part = get_random_string(length=3,allowed_chars='abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ') + get_random_string(length=3, allowed_chars='1234567890')+ emp_no_str[4:]
+        return random_part
 
-    def __str__(self):
-        return str(self.PassWord)
-    
     def was_published_recently(self):
-        return self.created_at >= timezone.now() - datetime.timedelta(days=1)
+        return self.date_joined >= timezone.now() - datetime.timedelta(days=1)
+
+# 회원정보
+# class EmpInfo(models.Model):
+#     EmpNo = models.CharField(max_length=6, primary_key=True, editable=False) #직원 번호
+#     EmpName = models.ForeignKey("User", on_delete=models.CASCADE, db_column="username") #직원 이름
+#     Job = models.ForeignKey("User", on_delete=models.CASCADE,db_column="Job")  #직무
+#     Position = models.ForeignKey("User", on_delete=models.CASCADE,db_column="Position") #직위
+#
+#     def save(self, *args, **kwargs):
+#         if self.Position == self.Admin:
+#             self.EmpNo = '0' + get_random_string(length=5, allowed_chars='1234567890')
+#         elif self.Position == self.Manager:
+#             self.EmpNo = '1' + get_random_string(length=5, allowed_chars='1234567890')
+#         elif self.Position == self.User:
+#             self.EmpNo = '2' + get_random_string(length=5, allowed_chars='1234567890')
+#         super(EmpInfo, self).save(*args, **kwargs)
+#
+#     def __str__(self):
+#         return str(self.EmpNo)
+#
+#     def was_published_recently(self):
+#         return self.created_at >= timezone.now() - datetime.timedelta(days=1)
+#     # 사원번호 랜덤 생성 / 앞의 1자리 권한번호 뒤의 랜덤 5자리  total 6자리
+#     # 중복 적용 안함을 아직 구현하지 않음 ------해결 필요
+#
+#
+#
+# # 로그인 정보
+# class LoginInfo(models.Model):
+#     EmpNo = models.ForeignKey("EmpInfo", on_delete=models.CASCADE, db_column="EmpNo") #직원 번호
+#     PassWord = models.CharField(max_length=8, editable=False) #비밀번호
+#
+#     # 비밀번호는 앞의 3자리는 영문 대소문자, 중간 3자리는 숫자, 뒤의 2자리는 해당 직원의 사원번호(EmpNo) 뒤의 2자리
+#     # 비밀번호의 경우 중복은 상관 없음
+#     def save(self, *args, **kwargs):
+#         emp_no_str = str(self.EmpNo)
+#         self.PassWord = get_random_string(length=3, allowed_chars='abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ') + get_random_string(length=3, allowed_chars='1234567890') + emp_no_str[4:]
+#         super(LoginInfo, self).save(*args, **kwargs)
+#
+#     def __str__(self):
+#         return str(self.PassWord)
+#
+#     def was_published_recently(self):
+#         return self.created_at >= timezone.now() - datetime.timedelta(days=1)
     
     # 회원가입을 api로 확인시 django의 auto id생성이 확인됨 id를 사용하지 않고 EmpNo를 사용하도록 수정 필요
 
 # 발주 정보
 class Order(models.Model):
-    EmpNo = models.ForeignKey("EmpInfo", on_delete=models.CASCADE, db_column="EmpNo") #직원 번호
+    EmpNo = models.ForeignKey("CustomUser", on_delete=models.CASCADE, db_column="EmpNo") #직원 번호
     OrderNo = models.IntegerField(primary_key=True) #발주 번호
     OrderDate = models.DateTimeField(auto_now_add=True) #발주 일자
     OrderWeight = models.CharField(max_length=100) #발주 중량
@@ -95,7 +156,7 @@ class Order(models.Model):
 # 원료 정보
 class Stock(models.Model):
     StockNo = models.IntegerField(primary_key=True) #입고 번호
-    EmpNo = models.ForeignKey("EmpInfo", on_delete=models.CASCADE, db_column="EmpNo") #직원 번호
+    EmpNo = models.ForeignKey("CustomUser", on_delete=models.CASCADE, db_column="EmpNo") #직원 번호
     OrderNo = models.ForeignKey("Order", on_delete=models.CASCADE, db_column="OrderNo") #발주 번호
     StockDate = models.DateTimeField(auto_now_add=True) #입고 일
     RealWeight = models.IntegerField(default=0) #실중량
@@ -114,7 +175,7 @@ class Stock(models.Model):
 # 실제품, 2차가공
 class Product(models.Model):
     ProductNo = models.IntegerField(primary_key=True) #제품 번호
-    EmpNo = models.ForeignKey("EmpInfo", on_delete=models.CASCADE, db_column="EmpNo")#직원 번호
+    EmpNo = models.ForeignKey("CustomUser", on_delete=models.CASCADE, db_column="EmpNo")#직원 번호
     StockNo = models.ForeignKey("Stock", on_delete=models.CASCADE, db_column="StockNo")#입고 번호
     ProductDate = models.DateTimeField(auto_now_add=True) #제품 생산일
     AfterProduceWeight = models.IntegerField(default=0) #손질 후 중량
