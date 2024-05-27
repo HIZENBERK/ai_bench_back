@@ -48,7 +48,7 @@ class UserManager(BaseUserManager):
         )
 
         user.is_superuser = True
-        user.is_staff = True  # 최상위 사용자가 staff 상태를 가지도록 설정
+        #user.is_staff = True  # 최상위 사용자가 staff 상태를 가지도록 설정
         user.save(using=self._db)
         return user
 
