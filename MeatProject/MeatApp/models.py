@@ -1,73 +1,130 @@
 from typing import Any, Iterable
+from venv import logger
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.base_user import BaseUserManager, AbstractBaseUser
 from django.contrib.auth.models import AbstractUser, PermissionsMixin, User
 from django.db import models
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 from django.utils import timezone
 from django.utils.crypto import get_random_string
 import datetime
+
+#from django.utils.translation import ugettext_lazy as _
 from rest_framework.authtoken.models import Token
 
-class CustomUserManager(BaseUserManager):
-    def create_user(self, username, EmpNo, Position, password=None, **extra_fields):
-        if not EmpNo:
-            raise ValueError('The EmpNo field must be set')
-        user = self.model(username=username, EmpNo=EmpNo, Position=Position, **extra_fields)
-        if password:
-            user.set_password(password)
-        else:
-            user.set_password(self.make_random_password())
+
+class UserManager(BaseUserManager):
+    def create_user(self, empNo, username, Position, Job=None, password=None):
+        """
+        주어진 이메일, 닉네임, 비밀번호 등 개인정보로 User 인스턴스 생성
+        """
+        if not empNo:
+            raise ValueError('Users must have an employee number')
+
+        user = self.model(
+            empNo=empNo,
+            username=username,
+            Position=Position,
+            Job=Job,
+        )
+
+        user.set_password(password)
         user.save(using=self._db)
         return user
 
-    def create_superuser(self, username, EmpNo, Position, password=None, **extra_fields):
-        extra_fields.setdefault('is_admin', True)
-        extra_fields.setdefault('is_superuser', True)
-        return self.create_user(username, EmpNo, Position, password, **extra_fields)
+    def create_superuser(self, empNo, username, password, Position='A', Job='OM'):
+        """
+        주어진 이메일, 닉네임, 비밀번호 등 개인정보로 User 인스턴스 생성
+        단, 최상위 사용자이므로 권한을 부여한다.
+        """
+        user = self.create_user(
+            empNo=empNo,
+            username=username,
+            Position=Position,
+            Job=Job,
+            password=password,
+        )
+
+        user.is_superuser = True
+        user.is_staff = True  # 최상위 사용자가 staff 상태를 가지도록 설정
+        user.save(using=self._db)
+        return user
 
 
-class CustomUser(AbstractUser):
-    username = models.CharField(max_length=6, unique=True)
-    EmpNo = models.CharField(max_length=6, unique=True, editable=False)
-
+class User(AbstractBaseUser, PermissionsMixin):
+    empNo = models.CharField(
+        verbose_name=('Employee Number'),
+        max_length=10,
+        unique=True,
+    )
+    username = models.CharField(
+        verbose_name=('User name'),
+        max_length=30,
+        unique=True
+    )
+    is_active = models.BooleanField(
+        verbose_name=('Is active'),
+        default=True
+    )
+    date_joined = models.DateTimeField(
+        verbose_name=('Date joined'),
+        default=timezone.now
+    )
     OrderManager = 'OM'
     DissectionManager = 'DM'
     WarehouseManager = 'WM'
     Admin = 'A'
     Manager = 'M'
     User = 'U'
-
     JobList = [  # 직무
         (OrderManager, '주문담당자'),
         (DissectionManager, '해체담당자'),
         (WarehouseManager, '입고담당자'),
     ]
-    Job = models.CharField(max_length=100, choices=JobList, default=OrderManager)
+    Job = models.CharField(
+        max_length=50,
+        choices=JobList,
+        default=OrderManager
+    )
 
     PositionList = [
         (Admin, '관리자'),
         (Manager, '매니저'),
         (User, '사용자'),
     ]
-    Position = models.CharField(max_length=100, choices=PositionList, default=User)  # 직위
-    is_active = models.BooleanField(default=True) #계정 사용가능 여부
-    is_admin = models.BooleanField(default=False)#항상 관리자로 유지하는지
-    is_anonymous = models.BooleanField(default=False)#항상 로그아웃을 유지할지
-    is_authenticated = models.BooleanField(default=False)#항상 로그인을 유지할지
-    #id로 사용할 필드
-    USERNAME_FIELD = 'EmpNo'
-    #필수 입력 필드
-    REQUIRED_FIELDS = ['username', 'Position']
+    Position = models.CharField(
+        max_length=20,
+        choices=PositionList,
+        default=User
+    )  # 직위
 
-    objects = CustomUserManager()
+    # 이 필드는 레거시 시스템 호환을 위해 추가할 수도 있다.
+    # salt = models.CharField(
+    #     verbose_name=_('Salt'),
+    #     max_length=10,
+    #     blank=True
+    # )
 
-    def save(self, *args, **kwargs):
-        if not self.EmpNo:
-            self.EmpNo = self.generate_emp_no()
-        if not self.password:
-            self.set_password(self.generate_password())
-        super().save(*args, **kwargs)
+    objects = UserManager()
+
+    # id로 사용할 필드
+    USERNAME_FIELD = 'empNo'
+    # 필수 입력 필드
+    REQUIRED_FIELDS = [
+        'username',
+        'Job'
+        #,'Position'
+    ]
+
+    # class Meta:
+    #     verbose_name = _('empNo')
+    #     verbose_name_plural = _('users')
+    #     ordering = ('-date_joined',)
+
+    def __str__(self):
+        return self.username
 
     def generate_emp_no(self):
         prefix = ''
@@ -80,15 +137,105 @@ class CustomUser(AbstractUser):
         return prefix
 
     def generate_password(self):
-        emp_no_str = str(self.EmpNo)
+        emp_no_str = str(self.empNo)
         if emp_no_str == 'Admin':
             random_part = '1234'
         else:
             random_part = get_random_string(length=3,allowed_chars='abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ') + get_random_string(length=3, allowed_chars='1234567890')+ emp_no_str[4:]
+        logger.debug(random_part)
         return random_part
 
-    def was_published_recently(self):
-        return self.date_joined >= timezone.now() - datetime.timedelta(days=1)
+    @property
+    def is_staff(self):
+        "Is the user a member of staff?"
+        # Simplest possible answer: All superusers are staff
+        return self.is_superuser
+
+
+
+# class CustomUserManager(BaseUserManager):
+#     def create_user(self, username, EmpNo, Position, password=None, **extra_fields):
+#         if not EmpNo:
+#             raise ValueError('The EmpNo field must be set')
+#         user = self.model(username=username, EmpNo=EmpNo, Position=Position, **extra_fields)
+#         if password:
+#             user.set_password(password)
+#         else:
+#             user.set_password(self.generate_password())
+#         user.save(using=self._db)
+#         return user
+#
+#     def create_superuser(self, username, EmpNo, Position, password=None, **extra_fields):
+#         extra_fields.setdefault('is_admin', True)
+#         extra_fields.setdefault('is_superuser', True)
+#         return self.create_user(username, EmpNo, Position, password, **extra_fields)
+
+# class CustomUser(AbstractBaseUser, PermissionsMixin):
+#     username = models.CharField(max_length=6, unique=True)
+#     EmpNo = models.CharField(max_length=6, unique=True, editable=False)
+#
+#     OrderManager = 'OM'
+#     DissectionManager = 'DM'
+#     WarehouseManager = 'WM'
+#     Admin = 'A'
+#     Manager = 'M'
+#     User = 'U'
+#
+#     JobList = [  # 직무
+#         (OrderManager, '주문담당자'),
+#         (DissectionManager, '해체담당자'),
+#         (WarehouseManager, '입고담당자'),
+#     ]
+#     Job = models.CharField(max_length=100, choices=JobList, default=OrderManager)
+#
+#     PositionList = [
+#         (Admin, '관리자'),
+#         (Manager, '매니저'),
+#         (User, '사용자'),
+#     ]
+#     Position = models.CharField(max_length=100, choices=PositionList, default=User)  # 직위
+#     is_active = models.BooleanField(default=True) #계정 사용가능 여부
+#     is_admin = models.BooleanField(default=False)#항상 관리자로 유지하는지
+#     is_anonymous = models.BooleanField(default=False)#항상 로그아웃을 유지할지
+#     is_authenticated = models.BooleanField(default=False)#항상 로그인을 유지할지
+#     #id로 사용할 필드
+#     USERNAME_FIELD = 'EmpNo'
+#     #필수 입력 필드
+#     REQUIRED_FIELDS = ['username', 'Position']
+#
+#     objects = CustomUserManager()
+#
+#     def save(self, *args, **kwargs):
+#         if not self.EmpNo:
+#             self.EmpNo = self.generate_emp_no()
+#         if not self.password:
+#             self.set_password(self.generate_password())
+#             #self.set_password(self.password)
+#         super().save(*args, **kwargs)
+#
+#     def generate_emp_no(self):
+#         prefix = ''
+#         if self.Position == self.Admin:
+#             prefix = 'admin'
+#         elif self.Position == self.Manager:
+#             prefix = '1'+ get_random_string(length=5, allowed_chars='1234567890')
+#         elif self.Position == self.User:
+#             prefix = '2'+ get_random_string(length=5, allowed_chars='1234567890')
+#         return prefix
+#
+#     def generate_password(self):
+#         emp_no_str = str(self.EmpNo)
+#         if emp_no_str == 'Admin':
+#             random_part = '1234'
+#         else:
+#             random_part = get_random_string(length=3,allowed_chars='abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ') + get_random_string(length=3, allowed_chars='1234567890')+ emp_no_str[4:]
+#         logger.debug(random_part)
+#         return random_part
+#
+#     def was_published_recently(self):
+#         return self.date_joined >= timezone.now() - datetime.timedelta(days=1)
+
+
 
 # 회원정보
 # class EmpInfo(models.Model):
@@ -138,7 +285,7 @@ class CustomUser(AbstractUser):
 
 # 발주 정보
 class Order(models.Model):
-    EmpNo = models.ForeignKey("CustomUser", on_delete=models.CASCADE, db_column="EmpNo") #직원 번호
+    EmpNo = models.ForeignKey("User", on_delete=models.CASCADE, db_column="EmpNo") #직원 번호
     OrderNo = models.IntegerField(primary_key=True) #발주 번호
     OrderDate = models.DateTimeField(auto_now_add=True) #발주 일자
     OrderWeight = models.CharField(max_length=100) #발주 중량
@@ -156,7 +303,7 @@ class Order(models.Model):
 # 원료 정보
 class Stock(models.Model):
     StockNo = models.IntegerField(primary_key=True) #입고 번호
-    EmpNo = models.ForeignKey("CustomUser", on_delete=models.CASCADE, db_column="EmpNo") #직원 번호
+    EmpNo = models.ForeignKey("User", on_delete=models.CASCADE, db_column="EmpNo") #직원 번호
     OrderNo = models.ForeignKey("Order", on_delete=models.CASCADE, db_column="OrderNo") #발주 번호
     StockDate = models.DateTimeField(auto_now_add=True) #입고 일
     RealWeight = models.IntegerField(default=0) #실중량
@@ -175,7 +322,7 @@ class Stock(models.Model):
 # 실제품, 2차가공
 class Product(models.Model):
     ProductNo = models.IntegerField(primary_key=True) #제품 번호
-    EmpNo = models.ForeignKey("CustomUser", on_delete=models.CASCADE, db_column="EmpNo")#직원 번호
+    EmpNo = models.ForeignKey("User", on_delete=models.CASCADE, db_column="EmpNo")#직원 번호
     StockNo = models.ForeignKey("Stock", on_delete=models.CASCADE, db_column="StockNo")#입고 번호
     ProductDate = models.DateTimeField(auto_now_add=True) #제품 생산일
     AfterProduceWeight = models.IntegerField(default=0) #손질 후 중량

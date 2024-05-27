@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import CustomUser, Order, Stock, Product
+from .models import User, Order, Stock, Product
 
 # class EmpInfoserializers(serializers.ModelSerializer):
 #     class Meta:
@@ -10,10 +10,19 @@ from .models import CustomUser, Order, Stock, Product
 #     class Meta:
 #         model = LoginInfo
 #         fields = '__all__'
-class CustomUserserializers(serializers.ModelSerializer):
+
+
+
+class Userserializers(serializers.ModelSerializer):
     class Meta:
-        model = CustomUser
+        model = User
         fields = '__all__'
+
+class LoginSerializer(serializers.Serializer):
+    EmpNo = serializers.CharField(max_length=10)
+    password = serializers.CharField(write_only=True)
+
+
 class Orderserializers(serializers.ModelSerializer):
     class Meta:
         model = Order

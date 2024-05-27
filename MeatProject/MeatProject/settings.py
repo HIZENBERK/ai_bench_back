@@ -9,8 +9,14 @@ https://docs.djangoproject.com/en/5.0/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.0/ref/settings/
 """
-
+from datetime import timedelta
 from pathlib import Path
+import os
+
+#import timedelta
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "MeatProject.settings")
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -103,7 +109,7 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-AUTH_USER_MODEL = 'MeatApp.CustomUser'
+AUTH_USER_MODEL = 'MeatApp.User'
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.0/topics/i18n/
@@ -137,5 +143,26 @@ REST_FRAMEWORK = {
 }
 
 SIMPLE_JWT = {
-    'AUTH_HEADER_TYPES': ('JWT',),
+    #'ACCESS_TOKEN_LIFETIME': timedelta,
+    #'REFRESH_TOKEN_LIFETIME': timedelta,
+    'ROTATE_REFRESH_TOKENS': False,
+    #'BLACKLIST_AFTER_ROTATION': True,
+    'TOKEN_USER_CLASS': 'MeatApp.User', #자신의 User 모델 연결
+}
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+        }
+    },
+    'loggers': {
+        'django.db.backends': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+        }
+    }
 }
