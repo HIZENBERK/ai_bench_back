@@ -2,14 +2,19 @@ from django.contrib.auth import authenticate
 from django.shortcuts import render
 from django.http import HttpResponse
 from django.http import JsonResponse
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, generics
 from rest_framework.authtoken.admin import User
 from rest_framework.exceptions import AuthenticationFailed
+from rest_framework.permissions import AllowAny
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.views import TokenObtainPairView
+
 from .models import User, Order, Stock, Product
-from .serializers import Userserializers, Orderserializers, Stockserializers, Productserializers, LoginSerializer
+from .serializers import Userserializers, Orderserializers, Stockserializers, Productserializers, LoginSerializer, \
+    MyTokenObtainPairSerializer, SingupSerializer
 
 
 # Create your views here.
@@ -43,32 +48,60 @@ class ProductViewSet(viewsets.ModelViewSet):
 # 토큰을 이용한 회원가입
 class SignupView(APIView):
     def post(self, request):
-        data = request.data
-        user = User.objects.create_user(data['UserName'], data['Position'], data['Job'])
+        serializer = SingupSerializer(data=request.data)
+        if serializer.is_valid():
+            user = User(
+                username=serializer.validated_data['username'],
+                Job=serializer.validated_data['Job'],
+                Position=serializer.validated_data['Position']
+            )
+            user.empNo = user.generate_emp_no()
+            password = user.generate_password()
+            user.set_password(password)
+            user.save()
 
-        token = Token.objects.create(user=user)
-        return Response({"token": token.key})
+            return JsonResponse({
+                'username': user.username,
+                'empNo': user.empNo,
+                'password': password
+            }, status=status.HTTP_201_CREATED)
+        return JsonResponse(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
+class MyTokenObtainPairView(TokenObtainPairView):
+    serializer_class = MyTokenObtainPairSerializer
+
+class RegisterView(generics.CreateAPIView):
+    queryset = User.objects.all()
+    permission_classes = (AllowAny,)
+    serializer_class = SingupSerializer
 
 class LoginView(APIView):
     def post(self, request):
         serializer = LoginSerializer(data=request.data)
         if serializer.is_valid():
-            EmpNo = serializer.validated_data['EmpNo']
+            empNo = serializer.validated_data['empNo']
             password = serializer.validated_data['password']
-            try:
-                user = User.objects.get(EmpNo=EmpNo, password=password)
-                if user.check_password(EmpNo,password):
-                    return Response({
-                        'user_id': user.id,
+            user = User.objects.filter(empNo=empNo).first()
+
+            if user and user.check_password(password):
+                if user.is_active:
+                    refresh = RefreshToken.for_user(user)
+                    print(str(refresh.access_token))
+                    return JsonResponse({
+                        'refresh': str(refresh),
+                        'access': str(refresh.access_token),
                         'username': user.username,
-                        'EmpNo': user.EmpNo
+                        'empNo': user.empNo,
+                        'job': user.Job,
+                        'position': user.Position
                     })
                 else:
-                    return Response({'error': 'Invalid password'}, status=status.HTTP_401_UNAUTHORIZED)
-            except User.DoesNotExist:
-                return Response({'error': 'Invalid EmpNo'}, status=status.HTTP_401_UNAUTHORIZED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                    return JsonResponse({'error': 'Inactive user'}, status=status.HTTP_403_FORBIDDEN)
+            else:
+                return JsonResponse({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
+        else:
+            return JsonResponse(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 # def empinfo_view(request):
 #     data = {"message": "This is the empinfo page."}

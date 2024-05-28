@@ -2,7 +2,9 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from . import views
 from .views import LoginView
-
+from rest_framework_simplejwt.views import (
+    TokenRefreshView,
+)
 router = DefaultRouter()
 # router.register(r'empinfo', views.EmpInfoViewSet)
 # router.register(r'logininfo', views.LoginInfoViewSet)
@@ -27,5 +29,8 @@ urlpatterns = [
     path('stock/&lt;int:pk&gt;/', views.StockViewSet.as_view({'get': 'retrieve', 'put': 'update', 'delete': 'destroy'}), name='stock-detail'),
     path('product/', views.ProductViewSet.as_view({'get': 'list', 'post': 'create'}), name='product-list'),
     path('product/&lt;int:pk&gt;/', views.ProductViewSet.as_view({'get': 'retrieve', 'put': 'update', ' delete': 'destroy'}), name='product-detail'),
-    path('singup/', views.SignupView.as_view()),
+    path('signup/', views.SignupView.as_view(), name="signup"),
+    path('token/', views.MyTokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('register/', views.RegisterView.as_view(), name='auth_register'),
 ]
