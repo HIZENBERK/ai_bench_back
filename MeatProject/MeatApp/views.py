@@ -1,14 +1,8 @@
-from django.contrib.auth import authenticate
-from django.shortcuts import render
-from django.http import HttpResponse
 from django.http import JsonResponse
 from rest_framework import viewsets, status, generics
 from rest_framework.authtoken.admin import User
-from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.permissions import AllowAny
 from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework.authtoken.models import Token
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 
@@ -68,6 +62,34 @@ class SignupView(APIView):
         return JsonResponse(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+# class OrderView(APIView):
+#     def post(self, request):
+#         serializer = Orderserializers(data=request.data)
+#         if serializer.is_valid():
+#             order = Order(
+#                 EmpNo=serializer.validated_data['empNo'],
+#                 OrderDate=serializer.validated_data['OrderDate'],
+#                 OrderWeight=serializer.validated_data['OrderWeight'],
+#                 ETA = serializer.validated_data['OrderWeight'],
+#                 Part = serializer.validated_data['OrderWeight'],
+#                 Client = serializer.validated_data['OrderWeight'],
+#                 OderPrice = serializer.validated_data['OrderWeight'],
+#             )
+#             order.EmpNo = User.empNo()
+#             order.save()
+#
+#             return JsonResponse({
+#                 'empNo': order.EmpNo,
+#                 # 'password': password
+#                 # 'password': password
+#                 # 'password': password
+#                 # 'password': password
+#                 # 'password': password
+#                 # 'password': password
+#             }, status=status.HTTP_201_CREATED)
+#         return JsonResponse(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
 class MyTokenObtainPairView(TokenObtainPairView):
     serializer_class = MyTokenObtainPairSerializer
 
@@ -102,7 +124,3 @@ class LoginView(APIView):
                 return JsonResponse({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
         else:
             return JsonResponse(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-# def empinfo_view(request):
-#     data = {"message": "This is the empinfo page."}
-#     return JsonResponse(data)

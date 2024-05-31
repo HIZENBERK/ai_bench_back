@@ -3,17 +3,6 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 from .models import User, Order, Stock, Product
 
-# class EmpInfoserializers(serializers.ModelSerializer):
-#     class Meta:
-#         model = EmpInfo
-#         fields = '__all__'
-#
-# class LoginInfoserializers(serializers.ModelSerializer):
-#     class Meta:
-#         model = LoginInfo
-#         fields = '__all__'
-
-
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
     @classmethod
     def get_token(cls, User):

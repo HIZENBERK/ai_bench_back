@@ -18,7 +18,7 @@ from rest_framework.authtoken.models import Token
 class UserManager(BaseUserManager):
     def create_user(self, empNo, username, Position, Job=None, password=None):
         """
-        주어진 이메일, 닉네임, 비밀번호 등 개인정보로 User 인스턴스 생성
+        주어진 비밀번호 등 개인정보로 User 인스턴스 생성
         """
         if not empNo:
             raise ValueError('Users must have an employee number')
