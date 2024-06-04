@@ -153,12 +153,12 @@ class User(AbstractBaseUser, PermissionsMixin):
 
 
 # 부위
-class MeatPart(models.Model):
-    name = models.CharField(max_length=100, unique=True) #부위 이름
-    code = models.CharField(max_length=10, unique=True) #부위 고유 번호
+# class MeatPart(models.Model):
+#     name = models.CharField(max_length=100, unique=True) #부위 이름
+#     code = models.CharField(max_length=10, unique=True) #부위 고유 번호
     
-    def __str__(self):
-        return self.name
+#     def __str__(self):
+#         return self.name
 
 # 원료/발주
 class Order(models.Model):
@@ -168,31 +168,32 @@ class Order(models.Model):
     ETA = models.DateField() #입고 예정일
     Client = models.ForeignKey("Client", on_delete=models.CASCADE, db_column="ClientName") #거래처
     OrderWeight = models.IntegerField(max_length=100)#발주 중량(KG)
-    Part = models.ForeignKey("MeatPart", on_delete=models.CASCADE, choices=[(part.name, part.code) for part in MeatPart.objects.all()]) #부위
+    #Part = models.ForeignKey("MeatPart", on_delete=models.CASCADE, choices=[(part.name, part.code) for part in MeatPart.objects.all()]) #부위
+    Part = models.CharField(max_length=100) #부위
     OrderPrice = models.IntegerField(default=0) #발주 금액(발주 시 예삭 매입 금액)
     OrderNo = models.IntegerField(max_length=100, unique=True, blank=True) #발주 번호
     OrderSituation = models.CharField(max_length=100) #상태
     
     
-    def save(self, *args, **kwargs):
-        if not self.OrderNo: #발주번호가 없을 경우 자동 생성
-            #년/월/일/요일
-            today = datetime.datetime.today()
-            year = today.strftime('%Y')
-            month = today.strftime('%m')
-            day = today.strftime('%d')
-            day_of_week = today.strftime('%w') #0(일)~6(토)
-            #부위 고유번호
-            part_number = str(self.Part.code).zfill(4)
-            #발주업체 고유번호
-            client_number = str(self.Client.ID).zfill(4)
-            #당일 발주 순번
-            order_count = Order.objects.filter(OrderDate__year=year, OrderDate__month=today.month, OrderDate_day=today.day).count() + 1
+    # def save(self, *args, **kwargs):
+    #     if not self.OrderNo: #발주번호가 없을 경우 자동 생성
+    #         #년/월/일/요일
+    #         today = datetime.datetime.today()
+    #         year = today.strftime('%Y')
+    #         month = today.strftime('%m') 
+    #         day = today.strftime('%d')
+    #         day_of_week = today.strftime('%w') #0(일)~6(토)
+    #         #부위 고유번호
+    #         #part_number = str(self.Part.code).zfill(4)
+    #         #발주업체 고유번호
+    #         client_number = str(self.Client.ID).zfill(4)
+    #         #당일 발주 순번
+    #         order_count = Order.objects.filter(OrderDate__year=year, OrderDate__month=today.month, OrderDate_day=today.day).count() + 1
             
-            # 발주번호 생성
-            self.OrderNo = f"{year}{month}{day}{day_of_week}{part_number}{client_number}{order_count:04d}"
+    #         # 발주번호 생성
+    #         #self.OrderNo = f"{year}{month}{day}{day_of_week}{part_number}{client_number}{order_count:04d}"
             
-        super().save(*args, **kwargs)
+    #     super().save(*args, **kwargs)
     
     
     def __str__(self):
@@ -201,15 +202,15 @@ class Order(models.Model):
     def was_published_recently(self):
         return self.created_at >= timezone.now() - datetime.timedelta(days=1)
     
-    class Meta:
-        ordering = ['OrderDate']
+    # class Meta:
+    #     ordering = ['-OrderDate']
         
-    @classmethod
-    def reset_order_count(cls):
-        today = datetime.datetime.today()
-        #발주가 들어온 날짜가 오늘이 아닌 경우 발주번호 초기화
-        if cls.objects.filter(OrderDate__year=today.year, OrderDate__month=today.month, OrderDate__day=today.day).count() == 0:
-            cls.objects.all().update(OrderNo=None)
+    # @classmethod
+    # def reset_order_count(cls):
+    #     today = datetime.datetime.today()
+    #     #발주가 들어온 날짜가 오늘이 아닌 경우 발주번호 초기화
+    #     if cls.objects.filter(OrderDate__year=today.year, OrderDate__month=today.month, OrderDate__day=today.day).count() == 0:
+    #         cls.objects.all().update(OrderNo=None)
 
 
 
@@ -357,7 +358,7 @@ class InOutCome(models.Model):
 class Client(models.Model):
     ID = models.AutoField(primary_key=True) #번호
     ClientType = models.CharField(max_length=100) #거래처 유형(매입, 매출 두가지)
-    ClientName = models.CharField(max_length=100, primary_key=True) #거래처 이름 (기획서에는 없는데 필요할거 같아서 넣음)
+    ClientName = models.CharField(max_length=100) #거래처 이름 (기획서에는 없는데 필요할거 같아서 넣음)
     RepresentativeName = models.CharField(max_length=100) #대표자 명
     BusinessRegistrationNumber = models.CharField(max_length=100) #사업자 등록번호
     ClientAddress = models.CharField(max_length=100) #사업장 주소
