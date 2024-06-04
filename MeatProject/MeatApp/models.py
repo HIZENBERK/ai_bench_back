@@ -152,36 +152,71 @@ class User(AbstractBaseUser, PermissionsMixin):
         return self.is_superuser
 
 
-
+# 부위
+class MeatPart(models.Model):
+    name = models.CharField(max_length=100, unique=True) #부위 이름
+    code = models.CharField(max_length=10, unique=True) #부위 고유 번호
+    
+    def __str__(self):
+        return self.name
 
 # 원료/발주
 class Order(models.Model):
+    ID = models.AutoField(primary_key=True) #번호
     OrderDate = models.DateTimeField(auto_now_add=True) #발주 일시
     OrderWorker = models.ForeignKey("User", on_delete=models.CASCADE, db_column="username") #발주자명(로그인한 계정명으로 가져올것, 기획서 ui에는 없는데 요구사항에는 있어서 넣음)
     ETA = models.DateField() #입고 예정일
     Client = models.ForeignKey("Client", on_delete=models.CASCADE, db_column="ClientName") #거래처
     OrderWeight = models.IntegerField(max_length=100)#발주 중량(KG)
-    Part = models.CharField(max_length=100) #부위
-    OderPrice = models.IntegerField(default=0) #발주 금액(발주 시 예삭 매입 금액)
-    OrderNo = models.IntegerField(primary_key=True) #발주 번호
+    Part = models.ForeignKey("MeatPart", on_delete=models.CASCADE, choices=[(part.name, part.code) for part in MeatPart.objects.all()]) #부위
+    OrderPrice = models.IntegerField(default=0) #발주 금액(발주 시 예삭 매입 금액)
+    OrderNo = models.IntegerField(max_length=100, unique=True, blank=True) #발주 번호
     OrderSituation = models.CharField(max_length=100) #상태
-    OrderFix = models.BooleanField(default=False) #수정 여부(아마 o/x로 표시할듯, 아니면 수정 버튼이 되거나 일단 o/x로 했음)
+    
+    
+    def save(self, *args, **kwargs):
+        if not self.OrderNo: #발주번호가 없을 경우 자동 생성
+            #년/월/일/요일
+            today = datetime.datetime.today()
+            year = today.strftime('%Y')
+            month = today.strftime('%m')
+            day = today.strftime('%d')
+            day_of_week = today.strftime('%w') #0(일)~6(토)
+            #부위 고유번호
+            part_number = str(self.Part.code).zfill(4)
+            #발주업체 고유번호
+            client_number = str(self.Client.ID).zfill(4)
+            #당일 발주 순번
+            order_count = Order.objects.filter(OrderDate__year=year, OrderDate__month=today.month, OrderDate_day=today.day).count() + 1
+            
+            # 발주번호 생성
+            self.OrderNo = f"{year}{month}{day}{day_of_week}{part_number}{client_number}{order_count:04d}"
+            
+        super().save(*args, **kwargs)
     
     
     def __str__(self):
         return str(self.OrderNo)
-    
-    #def auto_generate_order_no(self):
-    #    return self.OrderNo 발주번호 자동 생성_프라이머리키로 설정했기 때문에 오류를 우려하여 나중에 추가할 예정
 
     def was_published_recently(self):
         return self.created_at >= timezone.now() - datetime.timedelta(days=1)
+    
+    class Meta:
+        ordering = ['OrderDate']
+        
+    @classmethod
+    def reset_order_count(cls):
+        today = datetime.datetime.today()
+        #발주가 들어온 날짜가 오늘이 아닌 경우 발주번호 초기화
+        if cls.objects.filter(OrderDate__year=today.year, OrderDate__month=today.month, OrderDate__day=today.day).count() == 0:
+            cls.objects.all().update(OrderNo=None)
 
 
 
 
 # 원료/입고
 class Stock(models.Model):
+    ID = models.AutoField(primary_key=True) #번호
     OrderNo = models.ForeignKey("Order", on_delete=models.CASCADE, db_column="OrderNo") #발주 번호 (외래키, 이걸로 발주일시, 입고 예정일 등등 가져올것)
     StockDate = models.DateTimeField(auto_now_add=True) #입고 일시
     StockWorker = models.ForeignKey("User", on_delete=models.CASCADE, db_column="username") #입고자명(로그인한 계정명으로 가져올것)
@@ -191,16 +226,15 @@ class Stock(models.Model):
     MeterialNo = models.IntegerField(default=0) #이력 번호
     SlaugtherDate = models.DateField() #도축일
     UnitPrice = models.IntegerField(default=0) #입고단가(1KG당 가격)
-    StockNo = models.IntegerField(primary_key=True) #입고 번호
+    StockNo = models.IntegerField(default=0) #입고 번호
     StockSituation = models.CharField(max_length=100) #상태
-    StockFix = models.BooleanField(default=False) #수정 여부 (아마 o/x로 표시할듯, 아니면 수정 버튼이 되거나 일단 o/x로 했음)
     
-
+    
     def __str__(self):
         return str(self.StockNo)
     
     # def auto_generate_stock_no(self):
-    #     return self.StockNo 입고번호 자동 생성_프라이머리키로 설정했기 때문에 오류를 우려하여 나중에 추가할 예정
+    #     return self.StockNo 입고번호 자동 생성
 
     def was_published_recently(self):
         return self.created_at >= timezone.now() - datetime.timedelta(days=1)
@@ -210,22 +244,25 @@ class Stock(models.Model):
 
 # 원료/2차 가공
 class Product(models.Model):
+    ID = models.AutoField(primary_key=True) #번호
     OrderNo = models.ForeignKey("Order", on_delete=models.CASCADE, db_column="OrderNo") #발주 번호 (외래키, 이걸로 발주일시, 입고 예정일 등등 가져올것)
     StockNo = models.ForeignKey("Stock", on_delete=models.CASCADE, db_column="StockNo") #입고 번호 (외래키, 이걸로 입고일시, 입고자명 등등 가져올것)
     ProductDate = models.DateTimeField(auto_now_add=True) #작업일(요일)
     ProductWorker = models.ForeignKey("User", on_delete=models.CASCADE, db_column="username") #작업자명(로그인한 계정명으로 가져올것)
     WeightAfterWork = models.IntegerField(default=0) #작업 후 중량(KG)
-    LossWeight = models.IntegerField(default=0) #로스((실중량 - 작업 후 중량)/실중량 = 로스율)
+    LossWeight = models.IntegerField(default=0) #로스((실중량 - 작업 후 중량)/실중량 = 로스율) #프론트에서 계산 할 수도 있음
     ProductPrice = models.IntegerField(default=0) #단가(작업 후 중량 기준으로 1000g/1kg당 가격)
     DiscountRate = models.IntegerField(default=0) #할인율(%)
-    ProductNo = models.IntegerField(max_length=100, primary_key=True) #제품 번호
+    ProductNo = models.IntegerField(default=0) #제품 번호
     ProductSituation = models.CharField(max_length=100) #상태
-    ProductFix = models.BooleanField(default=False) #수정 여부 (아마 o/x로 표시할듯, 아니면 수정 버튼이 되거나 일단 o/x로 했음)
     Quantity = models.IntegerField(default=0) #수량(제품 수량, 제품 상세에 있어서 만듬)
     
     
     def __str__(self):
         return str(self.ProductNo)
+    
+    # def auto_generate_product_no(self):
+    #     return self.ProductNo 제품번호 자동 생성
     
     def was_published_recently(self):
         return self.created_at >= timezone.now() - datetime.timedelta(days=1)
@@ -235,28 +272,28 @@ class Product(models.Model):
 
 # 제품/재고 현황
 # class InventoryStatus(models.Model): 
-# 보류
+# 보류 굳이 안 팔요할듯 함
 
     
 
 # 주문/주문 등록(order와 겹쳐서 purchase로 설정함)
 class Purchase(models.Model):
+    ID = models.AutoField(primary_key=True) #번호
     ProductNo = models.ForeignKey("Product", on_delete=models.CASCADE, db_column="ProductNo") #제품 번호 (외래키, 이걸로 제품명, 가격 등등 가져올것)
     PurchaseDate = models.DateTimeField(auto_now_add=True) #등록일(요일)
     # 구분이 뭔지 모르겠음
     Purchaser = models.ForeignKey("User", on_delete=models.CASCADE, db_column="username") #주문자(로그인한 계정명으로 가져올것)
     PurchaseAddress = models.CharField(max_length=100) #주소
     PurchasePhone = models.CharField(max_length=100) #연락처
-    PurchaseNo = models.IntegerField(primary_key=True) #주문 번호
+    PurchaseNo = models.IntegerField(default=0) #주문 번호
     Wrapping = models.BooleanField(default=False) #선물포장 여부
-    # 수정/삭제의 경우 버튼으로 보여 따로 생성 안함
     
     
     def __str__(self):
         return str(self.PurchaseNo)
     
     # def auto_generate_purchase_no(self):
-    #     return self.PurchaseNo 주문번호 자동 생성_프라이머리키로 설정했기 때문에 오류를 우려하여 나중에 추가할 예정
+    #     return self.PurchaseNo 주문번호 자동 생성
 
     def was_published_recently(self):
         return self.created_at >= timezone.now() - datetime.timedelta(days=1)
@@ -265,7 +302,7 @@ class Purchase(models.Model):
 
 # 주문/작업지시서
 # class WorkOrder(models.Model):
-# 보류
+# 보류 굳이 안 팔요할듯 함
     
 
 
@@ -276,7 +313,7 @@ class DeliveryAccident(models.Model):
     TotalFreight = models.IntegerField(default=0) #총 운임
     ProductValue = models.IntegerField(default=0) #상품 가액
     Reimbursement = models.IntegerField(default=0) #변상요청금액
-    #등록일자를 뭐로 할지 모르겠음. 배송사고 발생일자로 할지, 상품 등록일자로 할지
+    PurchaseDate = models.ForeignKey("Purchase", on_delete=models.CASCADE, db_column="PurchaseDate") #등록 일자
     ShippingDate = models.DateField() #발송일자
     
     
@@ -292,8 +329,33 @@ class DeliveryAccident(models.Model):
         return self.created_at >= timezone.now() - datetime.timedelta(days=1)
 
 
+
+# 주문/ 매입,매출
+# 살짝 에매함 원료 테이블 쪽에서 가져오려면 다 가져올 수 있긴 함. 각 단품을 합산하면 결과적으로 월 매입,매출이 나올 수 있음
+class InOutCome(models.Model):
+    ID = models.AutoField(primary_key=True) #번호
+    Part = models.ForeignKey("Order", on_delete=models.CASCADE, db_column="Part") #부위(외래키, 이걸로 발주번호, 발주일시, 입고 예정일 등등 가져올것)
+    IncomePrice = models.IntegerField(default=0) #매입가
+    OutcomePrice = models.IntegerField(default=0) #매출가
+    IncomeAmount = models.IntegerField(default=0) #매입량
+    OutcomeAmount = models.IntegerField(default=0) #매출량
+    IncomeDate = models.DateField() #매입일시/월별
+    OutcomeDate = models.DateField() #매출일시/월별
+    Gifts = models.IntegerField(default=0) #사은품
+    
+    
+    
+    def __str__(self):
+        return str(self.InOutComeNo)
+
+    def was_published_recently(self):
+        return self.created_at >= timezone.now() - datetime.timedelta(days=1)
+
+
+
 # 기타/거래처 정보
 class Client(models.Model):
+    ID = models.AutoField(primary_key=True) #번호
     ClientType = models.CharField(max_length=100) #거래처 유형(매입, 매출 두가지)
     ClientName = models.CharField(max_length=100, primary_key=True) #거래처 이름 (기획서에는 없는데 필요할거 같아서 넣음)
     RepresentativeName = models.CharField(max_length=100) #대표자 명
