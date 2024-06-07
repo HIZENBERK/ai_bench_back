@@ -58,6 +58,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         verbose_name=('Employee Number'),
         max_length=10,
         unique=True,
+        primary_key=True
     )
     username = models.CharField(
         verbose_name=('User name'),
@@ -156,8 +157,16 @@ class User(AbstractBaseUser, PermissionsMixin):
 
 # 부위
 class MeatPart(models.Model):
-    name = models.CharField(max_length=100, unique=True)  # 부위 이름
-    code = models.CharField(max_length=10, unique=True)  # 부위 고유 번호
+    name = models.CharField(verbose_name=('Part name'),max_length=100, unique=True)  # 부위 이름
+    code = models.CharField(verbose_name=('Part code'),max_length=5, unique=True, blank=True)  # 부위 고유 번호
+
+    def save(self, *args, **kwargs):
+        if not self.code:
+            max_code = MeatPart.objects.aggregate(models.Max('code'))['code__max']
+            if max_code is None:  # 만약 데이터베이스에 아무 데이터도 없다면
+                max_code = 100
+            self.code = str(int(max_code) + 100)
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.name
@@ -166,13 +175,13 @@ class MeatPart(models.Model):
 # 원료/발주
 class Order(models.Model):
     ID = models.AutoField(primary_key=True)  # 번호
-    OrderDate = models.DateTimeField(auto_now_add=True)  # 발주 일시
-    OrderWorker = models.ForeignKey("User", on_delete=models.CASCADE,
-                                    db_column="username")  # 발주자명(로그인한 계정명으로 가져올것, 기획서 ui에는 없는데 요구사항에는 있어서 넣음)
+    OrderDate = models.DateTimeField(default=timezone.now())  # 발주 일시
+    # 발주자명(로그인한 계정명으로 가져올것, 기획서 ui에는 없는데 요구사항에는 있어서 넣음) -> 이성재 변경 사항: 이름으로 가져올 시에 중복 문제가 발생할 수 있기에 사번으로 저장
+    OrderWorker = models.ForeignKey("User", related_name="order_post", on_delete=models.CASCADE, db_column="OrderWorker")
     ETA = models.DateField()  # 입고 예정일
-    Client = models.ForeignKey("Client", on_delete=models.CASCADE, db_column="ClientName")  # 거래처
+    Client = models.ForeignKey("Client", related_name="order_post",on_delete=models.CASCADE, db_column="Client")  # 거래처
     OrderWeight = models.IntegerField(max_length=100)  # 발주 중량(KG)
-    Part = models.ForeignKey("MeatPart", on_delete=models.CASCADE)  # 부위
+    Part = models.ForeignKey("MeatPart", related_name="order_post",on_delete=models.CASCADE, db_column="Part")  # 부위
     OrderPrice = models.IntegerField(default=0)  # 발주 금액(발주 시 예삭 매입 금액)
     OrderNo = models.CharField(max_length=100, blank=True)  # 발주 번호
     OrderSituation = models.CharField(max_length=100)  # 상태
@@ -190,7 +199,6 @@ class Order(models.Model):
             # 발주업체 고유번호
             client_number = str(self.Client.ID).zfill(4)
             # 당일 발주 순번
-
             try:
                 order_count = Order.objects.filter(OrderDate__year=year, OrderDate__month=today.month,
                                                    OrderDate__day=today.day).count() + 1
@@ -199,14 +207,14 @@ class Order(models.Model):
 
             # 발주번호 생성
             self.OrderNo = f"{year}{month}{day}{day_of_week}{part_number}{client_number}{order_count:04d}"
-            print(year)
-            print(month)
-            print(day)
-            print(day_of_week)
-            print(part_number)
-            print(client_number)
-            print(order_count)
-            print(self.OrderNo)
+            # print(year)
+            # print(month)
+            # print(day)
+            # print(day_of_week)
+            # print(part_number)
+            # print(client_number)
+            # print(order_count)
+            # print(self.OrderNo)
 
         super().save(*args, **kwargs)
 
@@ -234,7 +242,7 @@ class Stock(models.Model):
     OrderNo = models.ForeignKey("Order", on_delete=models.CASCADE,
                                 db_column="OrderNo")  # 발주 번호 (외래키, 이걸로 발주일시, 입고 예정일 등등 가져올것)
     StockDate = models.DateTimeField(auto_now_add=True)  # 입고 일시
-    StockWorker = models.ForeignKey("User", on_delete=models.CASCADE, db_column="username")  # 입고자명(로그인한 계정명으로 가져올것)
+    StockWorker = models.ForeignKey("User", on_delete=models.CASCADE, db_column="StockWorker")  # 입고자명(로그인한 계정명으로 가져올것)
     Stockitem = models.CharField(max_length=100)  # 입고 품목
     RealWeight = models.IntegerField(default=0)  # 실 중량
     RealPrice = models.IntegerField(default=0)  # 실 매입가
@@ -268,7 +276,7 @@ class Product(models.Model):
     StockNo = models.ForeignKey("Stock", on_delete=models.CASCADE,
                                 db_column="StockNo")  # 입고 번호 (외래키, 이걸로 입고일시, 입고자명 등등 가져올것)
     ProductDate = models.DateTimeField(auto_now_add=True)  # 작업일(요일)
-    ProductWorker = models.ForeignKey("User", on_delete=models.CASCADE, db_column="username")  # 작업자명(로그인한 계정명으로 가져올것)
+    ProductWorker = models.ForeignKey("User", on_delete=models.CASCADE, db_column="ProductWorker")  # 작업자명(로그인한 계정명으로 가져올것)
     WeightAfterWork = models.IntegerField(default=0)  # 작업 후 중량(KG)
     LossWeight = models.IntegerField(default=0)  # 로스((실중량 - 작업 후 중량)/실중량 = 로스율) #프론트에서 계산 할 수도 있음
     ProductPrice = models.IntegerField(default=0)  # 단가(작업 후 중량 기준으로 1000g/1kg당 가격)
@@ -299,7 +307,7 @@ class Purchase(models.Model):
                                   db_column="ProductNo")  # 제품 번호 (외래키, 이걸로 제품명, 가격 등등 가져올것)
     PurchaseDate = models.DateTimeField(auto_now_add=True)  # 등록일(요일)
     # 구분이 뭔지 모르겠음
-    Purchaser = models.ForeignKey("User", on_delete=models.CASCADE, db_column="username")  # 주문자(로그인한 계정명으로 가져올것)
+    Purchaser = models.ForeignKey("User", on_delete=models.CASCADE, db_column="Purchaser")  # 주문자(로그인한 계정명으로 가져올것)
     PurchaseAddress = models.CharField(max_length=100)  # 주소
     PurchasePhone = models.CharField(max_length=100)  # 연락처
     PurchaseNo = models.IntegerField(default=0)  # 주문 번호

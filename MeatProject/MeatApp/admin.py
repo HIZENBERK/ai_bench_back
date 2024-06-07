@@ -1,18 +1,18 @@
 from django.contrib import admin
 from django.contrib.auth.forms import UserChangeForm, UserCreationForm
-from .models import User, Order, Stock, Product
+from .models import User, Order, Stock, Product, Purchase, DeliveryAccident, InOutCome, Client, MeatPart
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.utils.translation import gettext as _
 
 
 # 모델을 관리자 페이지에 등록합니다.
 
-# admin.site.register(EmpInfo)
-# admin.site.register(LoginInfo)
-# admin.site.register(Order)
-# admin.site.register(Stock)
-# admin.site.register(Product)
 
+admin.site.register(Order)
+admin.site.register(Stock)
+admin.site.register(Product)
+admin.site.register(Client)
+admin.site.register(MeatPart)
 class UserAdmin(BaseUserAdmin):
     form = UserChangeForm
     add_form = UserCreationForm
