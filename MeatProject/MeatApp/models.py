@@ -202,15 +202,6 @@ class Order(models.Model):
 
             # 발주번호 생성
             self.OrderNo = f"{year}{month}{day}{day_of_week}{part_number}{client_number}{order_count:04d}"
-            # print(year)
-            # print(month)
-            # print(day)
-            # print(day_of_week)
-            # print(part_number)
-            # print(client_number)
-            # print(order_count)
-            # print(self.OrderNo)
-
         super().save(*args, **kwargs)
 
     def __str__(self):
@@ -233,7 +224,7 @@ class Order(models.Model):
 # 원료/입고
 class Stock(models.Model):
     ID = models.AutoField(primary_key=True)  # 번호
-    OrderNo = models.ForeignKey("Order",to_field='OrderNo', on_delete=models.CASCADE, db_column="OrderNo")  # 발주 번호 (외래키, 이걸로 발주일시, 입고 예정일 등등 가져올것)
+    OrderNo = models.ForeignKey("Order", to_field='OrderNo', on_delete=models.CASCADE, db_column="OrderNo")  # 발주 번호 (외래키, 이걸로 발주일시, 입고 예정일 등등 가져올것)
     StockDate = models.DateField() # 입고 일시
     StockWorker = models.ForeignKey(User,to_field='empNo',on_delete=models.CASCADE, db_column="StockWorker")  # 입고자명(로그인한 계정명으로 가져올것)
     Stockitem = models.CharField(max_length=100)  # 입고 품목
@@ -244,29 +235,26 @@ class Stock(models.Model):
     UnitPrice = models.IntegerField(default=0)  # 입고단가(1KG당 가격)
     StockNo = models.CharField(max_length=100, blank=True, unique=True)  # 입고 번호
     StockSituation = models.CharField(max_length=100)  # 상태
-
-    def __str__(self):
-        return str(self.StockNo)
-
-    # 입고번호는 발주번호 + (입고날짜 - 발주날짜)
-    # 발주 날짜를 가져오고, 입고 날짜를 가져오기
-    # 발주 날짜를 orderno에서 날짜를 가져오기(4/2/2)(년/월/일)
-    # 이줄 년/월/일 을 가져와서 계산
-    # EX)이틀 뒤에 입고 되었다면 발주번호+0002(입고날짜 - 발주날짜)
-    # order테이블의 OrderDate
+    
     def save(self, *args, **kwargs):
         if not self.StockNo:
-            order_date = Order.objects.get(OrderNo=self.OrderNo.OrderNo).OrderDate
-            stock_date = self.StockDate
-            diff = stock_date - order_date
-            self.StockNo = self.OrderNo + str(diff).zfill(4)
+            try:
+                order_date = Order.objects.get(OrderNo=self.OrderNo).OrderDate
+                
+                if isinstance(order_date, datetime.datetime):
+                    order_date = order_date.date()
             
-            print(self.StockNo)
+                stock_date = self.StockDate
+                diff = stock_date - order_date # 날짜 차이 계산
+                
+                self.StockNo = str(self.OrderNo) + str(diff.days).zfill(4)
             
-            # today = datetime.datetime.today()
-            # order_no = self.OrderNo
-            # stock_date = str(today.strftime('%d')).zfill(4)
-            # self.StockNo = order_no + stock_date
+            except Order.DoesNotExist:
+                raise ValueError("참조된 발주번호가 존재하지 않습니다. 발주번호를 확인해주세요.")
+        super().save(*args, **kwargs)
+        
+    def __str__(self):
+        return str(self.StockNo)
 
     def was_published_recently(self):
         return self.created_at >= timezone.now() - datetime.timedelta(days=1)
