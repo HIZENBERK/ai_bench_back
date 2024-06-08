@@ -10,7 +10,7 @@ djangorestframework
 djangorestframework-simplejwt
 django-cors-headers
 
-
+ 테스트
 python manage.py makemigrations
 python manage.py migrate
 
