@@ -23,6 +23,7 @@ python manage.py makemigrations
 python manage.py migrate
 
 섹스다 섹스
+2
 
 //이미 있을 수도 있음
 superuser 생성
