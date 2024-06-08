@@ -169,7 +169,7 @@ class MeatPart(models.Model):
 # 원료/발주
 class Order(models.Model):
     ID = models.AutoField(primary_key=True)  # 번호
-    OrderDate = models.DateTimeField(default=timezone.now)  # 발주 일시
+    OrderDate = models.DateField(auto_now=True)  # 발주 일시
     # 발주자명(로그인한 계정명으로 가져올것, 기획서 ui에는 없는데 요구사항에는 있어서 넣음) -> 이성재 변경 사항: 이름으로 가져올 시에 중복 문제가 발생할 수 있기에 사번으로 저장
     OrderWorker = models.ForeignKey(User,to_field='empNo',on_delete=models.CASCADE, db_column="OrderWorker")
     ETA = models.DateField()  # 입고 예정일
@@ -180,6 +180,8 @@ class Order(models.Model):
     OrderNo = models.CharField(max_length=100, blank=True, unique=True)  # 발주 번호
     OrderSituation = models.CharField(max_length=100)  # 상태
 
+    
+    #발주번호는 발주가 등록되면 생성되면 발주번호 생성 규칙은 발주한 년/월/일/요일/부위 고유번호/ 발주업체 고유번호/ 당월 발주 순번 으로 한다. 
     def save(self, *args, **kwargs):
         if not self.OrderNo:  # 발주번호가 없을 경우 자동 생성
             # 년/월/일/요일
@@ -194,8 +196,7 @@ class Order(models.Model):
             client_number = str(self.Client.ID).zfill(4)
             # 당일 발주 순번
             try:
-                order_count = Order.objects.filter(OrderDate__year=year, OrderDate__month=today.month,
-                                                   OrderDate__day=today.day).count() + 1
+                order_count = Order.objects.filter(OrderDate__year=year, OrderDate__month=today.month, OrderDate__day=today.day).count() + 1
             except Exception as e:
                 order_count = 1
 
@@ -232,8 +233,8 @@ class Order(models.Model):
 # 원료/입고
 class Stock(models.Model):
     ID = models.AutoField(primary_key=True)  # 번호
-    OrderNo = models.ForeignKey("Order", on_delete=models.CASCADE, db_column="OrderNo")  # 발주 번호 (외래키, 이걸로 발주일시, 입고 예정일 등등 가져올것)
-    StockDate = models.DateTimeField(auto_now_add=True)  # 입고 일시
+    OrderNo = models.ForeignKey("Order",to_field='OrderNo', on_delete=models.CASCADE, db_column="OrderNo")  # 발주 번호 (외래키, 이걸로 발주일시, 입고 예정일 등등 가져올것)
+    StockDate = models.DateField() # 입고 일시
     StockWorker = models.ForeignKey(User,to_field='empNo',on_delete=models.CASCADE, db_column="StockWorker")  # 입고자명(로그인한 계정명으로 가져올것)
     Stockitem = models.CharField(max_length=100)  # 입고 품목
     RealWeight = models.IntegerField(default=0)  # 실 중량
@@ -241,20 +242,31 @@ class Stock(models.Model):
     MeterialNo = models.IntegerField(default=0)  # 이력 번호
     SlaugtherDate = models.DateField()  # 도축일
     UnitPrice = models.IntegerField(default=0)  # 입고단가(1KG당 가격)
-    StockNo = models.IntegerField(default=0, unique=True)  # 입고 번호
+    StockNo = models.CharField(max_length=100, blank=True, unique=True)  # 입고 번호
     StockSituation = models.CharField(max_length=100)  # 상태
 
     def __str__(self):
         return str(self.StockNo)
 
-    # 입고번호는 발주번호 + 입고된 날짜
-    # EX)이틀 뒤에 입고 되었다면 발주번호+00002
-
+    # 입고번호는 발주번호 + (입고날짜 - 발주날짜)
+    # 발주 날짜를 가져오고, 입고 날짜를 가져오기
+    # 발주 날짜를 orderno에서 날짜를 가져오기(4/2/2)(년/월/일)
+    # 이줄 년/월/일 을 가져와서 계산
+    # EX)이틀 뒤에 입고 되었다면 발주번호+0002(입고날짜 - 발주날짜)
+    # order테이블의 OrderDate
     def save(self, *args, **kwargs):
         if not self.StockNo:
-            order_no = self.OrderNo.OrderNo
-            stock_date = self.StockDate.strftime('%d').zfill(4)
-            self.StockNo = order_no + stock_date
+            order_date = Order.objects.get(OrderNo=self.OrderNo.OrderNo).OrderDate
+            stock_date = self.StockDate
+            diff = stock_date - order_date
+            self.StockNo = self.OrderNo + str(diff).zfill(4)
+            
+            print(self.StockNo)
+            
+            # today = datetime.datetime.today()
+            # order_no = self.OrderNo
+            # stock_date = str(today.strftime('%d')).zfill(4)
+            # self.StockNo = order_no + stock_date
 
     def was_published_recently(self):
         return self.created_at >= timezone.now() - datetime.timedelta(days=1)

@@ -5,15 +5,28 @@ interpreter에서 가상환경 선택
 프롬픝트 cmd로 연 후
 pip list
 pip 리스트 확인 후 없는것들 설치
+
+이거부터
+pip install -r requirements.txt
+
+이후 안되면 밑에거 하나씩 설치
 django
 djangorestframework
 djangorestframework-simplejwt
 django-cors-headers
 
+<<<<<<< HEAD
  테스트
+=======
+설치 이후
+jprivate_setting.py를 settings.py와 같은 폴더에 옮기고
+
+실행
+>>>>>>> origin/KimSG
 python manage.py makemigrations
 python manage.py migrate
 
+섹스다 섹스
 
 //이미 있을 수도 있음
 superuser 생성
@@ -36,4 +49,4 @@ rm db.sqlite3 명령어로 sql파일부터 날리고 다시 마이그레이션
 **db 갈아엎을 때 python manage.py flush 명령어도 가능하다 함 -> sql 파일은 안지우고 내용물만 지움
 
 23.06.07 추가사항
-보안을 위해 settings.py의 시크릿키와 데이텁베이스를 외부 파일로 만든 뒤 gitignore에 추가하여서 깃에 올라가지 않음
+보안을 위해 settings.py의 시크릿키와 데이터베이스를 외부 파일로 만든 뒤 gitignore에 추가하여서 깃에 올라가지 않음
