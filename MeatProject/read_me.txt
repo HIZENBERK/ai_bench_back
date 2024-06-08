@@ -15,10 +15,14 @@ djangorestframework
 djangorestframework-simplejwt
 django-cors-headers
 
+<<<<<<< HEAD
+ 테스트
+=======
 설치 이후
 jprivate_setting.py를 settings.py와 같은 폴더에 옮기고
 
 실행
+>>>>>>> origin/KimSG
 python manage.py makemigrations
 python manage.py migrate
 

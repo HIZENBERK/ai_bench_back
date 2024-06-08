@@ -8,3 +8,4 @@ MeatProject/MeatProject/private_settings.py
 MeatProject/MeatApp/__pycache__
 .venv
 MeatProject/MeatApp/migrations/__pycache__
+MeatProject/__pycache__
