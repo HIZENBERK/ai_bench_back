@@ -225,16 +225,14 @@ class Order(models.Model):
     def reset_order_count(cls):
         today = datetime.datetime.today()
         # 발주가 들어온 날짜가 오늘이 아닌 경우 발주번호 초기화
-        if cls.objects.filter(OrderDate__year=today.year, OrderDate__month=today.month,
-                              OrderDate__day=today.day).count() == 0:
+        if cls.objects.filter(OrderDate__year=today.year, OrderDate__month=today.month, OrderDate__day=today.day).count() == 0:
             cls.objects.all().update(OrderNo=None)
 
 
 # 원료/입고
 class Stock(models.Model):
     ID = models.AutoField(primary_key=True)  # 번호
-    OrderNo = models.ForeignKey("Order", on_delete=models.CASCADE,
-                                db_column="OrderNo")  # 발주 번호 (외래키, 이걸로 발주일시, 입고 예정일 등등 가져올것)
+    OrderNo = models.ForeignKey("Order", on_delete=models.CASCADE, db_column="OrderNo")  # 발주 번호 (외래키, 이걸로 발주일시, 입고 예정일 등등 가져올것)
     StockDate = models.DateTimeField(auto_now_add=True)  # 입고 일시
     StockWorker = models.ForeignKey(User,to_field='empNo',on_delete=models.CASCADE, db_column="StockWorker")  # 입고자명(로그인한 계정명으로 가져올것)
     Stockitem = models.CharField(max_length=100)  # 입고 품목
@@ -265,10 +263,8 @@ class Stock(models.Model):
 # 원료/2차 가공
 class Product(models.Model):
     ID = models.AutoField(primary_key=True)  # 번호
-    OrderNo = models.ForeignKey("Order",to_field='OrderNo', on_delete=models.CASCADE,
-                                db_column="OrderNo")  # 발주 번호 (외래키, 이걸로 발주일시, 입고 예정일 등등 가져올것)
-    StockNo = models.ForeignKey("Stock",to_field='StockNo', on_delete=models.CASCADE,
-                                db_column="StockNo")  # 입고 번호 (외래키, 이걸로 입고일시, 입고자명 등등 가져올것)
+    OrderNo = models.ForeignKey("Order",to_field='OrderNo', on_delete=models.CASCADE, db_column="OrderNo")  # 발주 번호 (외래키, 이걸로 발주일시, 입고 예정일 등등 가져올것)
+    StockNo = models.ForeignKey("Stock",to_field='StockNo', on_delete=models.CASCADE, db_column="StockNo")  # 입고 번호 (외래키, 이걸로 입고일시, 입고자명 등등 가져올것)
     ProductDate = models.DateTimeField(auto_now_add=True)  # 작업일(요일)
     ProductWorker = models.ForeignKey(User, on_delete=models.CASCADE, db_column="ProductWorker")  # 작업자명(로그인한 계정명으로 가져올것)
     WeightAfterWork = models.IntegerField(default=0)  # 작업 후 중량(KG)
@@ -297,8 +293,7 @@ class Product(models.Model):
 # 주문/주문 등록(order와 겹쳐서 purchase로 설정함)
 class Purchase(models.Model):
     ID = models.AutoField(primary_key=True)  # 번호
-    ProductNo = models.ForeignKey("Product", on_delete=models.CASCADE,
-                                  db_column="ProductNo")  # 제품 번호 (외래키, 이걸로 제품명, 가격 등등 가져올것)
+    ProductNo = models.ForeignKey("Product", on_delete=models.CASCADE, db_column="ProductNo")  # 제품 번호 (외래키, 이걸로 제품명, 가격 등등 가져올것)
     PurchaseDate = models.DateTimeField(auto_now_add=True)  # 등록일(요일)
     # 구분이 뭔지 모르겠음
     Purchaser = models.ForeignKey(User, on_delete=models.CASCADE, db_column="Purchaser")  # 주문자(로그인한 계정명으로 가져올것)
@@ -346,8 +341,7 @@ class DeliveryAccident(models.Model):
 # 살짝 에매함 원료 테이블 쪽에서 가져오려면 다 가져올 수 있긴 함. 각 단품을 합산하면 결과적으로 월 매입,매출이 나올 수 있음
 class InOutCome(models.Model):
     ID = models.AutoField(primary_key=True)  # 번호
-    Part = models.ForeignKey("Order", on_delete=models.CASCADE,
-                             db_column="Part")  # 부위(외래키, 이걸로 발주번호, 발주일시, 입고 예정일 등등 가져올것)
+    Part = models.ForeignKey("Order", on_delete=models.CASCADE, db_column="Part")  # 부위(외래키, 이걸로 발주번호, 발주일시, 입고 예정일 등등 가져올것)
     IncomePrice = models.IntegerField(default=0)  # 매입가
     OutcomePrice = models.IntegerField(default=0)  # 매출가
     IncomeAmount = models.IntegerField(default=0)  # 매입량

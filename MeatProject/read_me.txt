@@ -7,6 +7,8 @@ pip list
 pip 리스트 확인 후 없는것들 설치
 django
 djangorestframework
+djangorestframework-simplejwt
+django-cors-headers
 
 
 python manage.py makemigrations
