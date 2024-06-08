@@ -181,7 +181,7 @@ class Order(models.Model):
     OrderSituation = models.CharField(max_length=100)  # 상태
 
     
-    #발주번호는 발주가 등록되면 생성되면 발주번호 생성 규칙은 발주한 년/월/일/요일/부위 고유번호/ 발주업체 고유번호/ 당월 발주 순번 으로 한다. 
+    #발주번호는 발주가 등록되면 생성되면 발주번호 생성 규칙은 발주한 년/월/일/요일/부위 고유번호/ 발주업체 고유번호/ 당일 발주 순번 으로 한다. 
     #(y4/m2/d2/w1/p4/c4/0001)
     def save(self, *args, **kwargs):
         if not self.OrderNo:  # 발주번호가 없을 경우 자동 생성
@@ -225,7 +225,7 @@ class Order(models.Model):
 # 원료/입고
 class Stock(models.Model):
     ID = models.AutoField(primary_key=True)  # 번호
-    OrderNo = models.ForeignKey("Order", to_field='OrderNo', on_delete=models.CASCADE, db_column="OrderNo")  # 발주 번호 (외래키, 이걸로 발주일시, 입고 예정일 등등 가져올것)
+    OrderNo = models.ForeignKey("Order", to_field='OrderNo', on_delete=models.CASCADE, db_column="OrderNo", unique=True)  # 발주 번호 (외래키, 이걸로 발주일시, 입고 예정일 등등 가져올것)
     StockDate = models.DateField() # 입고 일시
     StockWorker = models.ForeignKey(User,to_field='empNo',on_delete=models.CASCADE, db_column="StockWorker")  # 입고자명(로그인한 계정명으로 가져올것)
     Stockitem = models.CharField(max_length=100)  # 입고 품목
