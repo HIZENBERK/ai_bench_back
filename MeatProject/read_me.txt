@@ -22,6 +22,7 @@ jprivate_setting.py를 settings.py와 같은 폴더에 옮기고
 python manage.py makemigrations
 python manage.py migrate
 
+섹스다 섹스
 
 //이미 있을 수도 있음
 superuser 생성
