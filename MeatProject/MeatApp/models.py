@@ -182,6 +182,7 @@ class Order(models.Model):
 
     
     #발주번호는 발주가 등록되면 생성되면 발주번호 생성 규칙은 발주한 년/월/일/요일/부위 고유번호/ 발주업체 고유번호/ 당월 발주 순번 으로 한다. 
+    #(y4/m2/d2/w1/p4/c4/0001)
     def save(self, *args, **kwargs):
         if not self.OrderNo:  # 발주번호가 없을 경우 자동 생성
             # 년/월/일/요일
@@ -263,24 +264,32 @@ class Stock(models.Model):
 # 원료/2차 가공
 class Product(models.Model):
     ID = models.AutoField(primary_key=True)  # 번호
-    OrderNo = models.ForeignKey("Order",to_field='OrderNo', on_delete=models.CASCADE, db_column="OrderNo")  # 발주 번호 (외래키, 이걸로 발주일시, 입고 예정일 등등 가져올것)
     StockNo = models.ForeignKey("Stock",to_field='StockNo', on_delete=models.CASCADE, db_column="StockNo")  # 입고 번호 (외래키, 이걸로 입고일시, 입고자명 등등 가져올것)
     ProductDate = models.DateTimeField(auto_now_add=True)  # 작업일(요일)
-    ProductWorker = models.ForeignKey(User, on_delete=models.CASCADE, db_column="ProductWorker")  # 작업자명(로그인한 계정명으로 가져올것)
+    ProductWorker = models.ForeignKey(User,to_field='empNo',on_delete=models.CASCADE, db_column="ProductWorker")  # 작업자명(로그인한 계정명으로 가져올것)
     WeightAfterWork = models.IntegerField(default=0)  # 작업 후 중량(KG)
     LossWeight = models.IntegerField(default=0)  # 로스((실중량 - 작업 후 중량)/실중량 = 로스율) #프론트에서 계산 할 수도 있음
     ProductPrice = models.IntegerField(default=0)  # 단가(작업 후 중량 기준으로 1000g/1kg당 가격)
     DiscountRate = models.IntegerField(default=0)  # 할인율(%)
-    ProductNo = models.IntegerField(default=0)  # 제품 번호
+    ProductNo = models.CharField(max_length=100, blank=True, unique=True)  # 제품 번호
     ProductSituation = models.CharField(max_length=100)  # 상태
     Quantity = models.IntegerField(default=0)  # 수량(제품 수량, 제품 상세에 있어서 만듬)
 
     def __str__(self):
         return str(self.ProductNo)
-
-    # def auto_generate_product_no(self):
-    #     return self.ProductNo 제품번호 자동 생성
-
+    
+    # 제품 번호 = 입고번호 + 카운트 1씩 증가
+    def save(self, *args, **kwargs):
+        if not self.ProductNo:  # 제품 번호가 비어 있는 경우에만 새로운 번호 생성
+            last_product = Product.objects.filter(StockNo=self.StockNo).order_by('-ProductNo').first()
+            if last_product:
+                last_number = int(last_product.ProductNo[-4:])
+                new_number = str(last_number + 1).zfill(4) # 4자리 숫자로 변환
+            else:
+                new_number = "0001"
+            self.ProductNo = f"{self.StockNo}{new_number}"
+        super().save(*args, **kwargs)
+        
     def was_published_recently(self):
         return self.created_at >= timezone.now() - datetime.timedelta(days=1)
 
@@ -299,7 +308,7 @@ class Purchase(models.Model):
     Purchaser = models.ForeignKey(User, on_delete=models.CASCADE, db_column="Purchaser")  # 주문자(로그인한 계정명으로 가져올것)
     PurchaseAddress = models.CharField(max_length=100)  # 주소
     PurchasePhone = models.CharField(max_length=100)  # 연락처
-    PurchaseNo = models.IntegerField(default=0)  # 주문 번호
+    PurchaseNo = models.CharField(max_length=100, blank=True, unique=True)  # 주문 번호
     Wrapping = models.BooleanField(default=False)  # 선물포장 여부
 
     def __str__(self):
