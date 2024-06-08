@@ -31,6 +31,7 @@ password : 1234
 
 db 갈아엎을때
 rm db.sqlite3 명령어로 sql파일부터 날리고 다시 마이그레이션
+**db 갈아엎을 때 python manage.py flush 명령어도 가능하다 함 -> sql 파일은 안지우고 내용물만 지움
 
 23.06.07 추가사항
-보안을 위해 settings.py의 시크릿키와 데이텁베이스를 외부 폴더로 만든 뒤 gitignore에 추가하여서 깃에 올라가지 않음
+보안을 위해 settings.py의 시크릿키와 데이텁베이스를 외부 파일로 만든 뒤 gitignore에 추가하여서 깃에 올라가지 않음

@@ -5,6 +5,7 @@
 .idea/vcs.xml
 .idea/inspectionProfiles/profiles_settings.xml
 MeatProject/MeatProject/private_settings.py
+MeatProject/MeatApp/_pycache_/*
 .venv/pyvenv.cfg
 .venv/Lib/site-packages/asgiref/__init__.py
 .venv/Lib/site-packages/asgiref/compatibility.py

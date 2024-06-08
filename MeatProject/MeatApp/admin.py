@@ -7,7 +7,7 @@ from django.utils.translation import gettext as _
 
 # 모델을 관리자 페이지에 등록합니다.
 
-
+admin.site.register(User)
 admin.site.register(Order)
 admin.site.register(Stock)
 admin.site.register(Product)

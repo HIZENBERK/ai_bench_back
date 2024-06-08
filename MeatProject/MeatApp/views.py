@@ -10,15 +10,6 @@ from .models import User, Order, Stock, Product
 from .serializers import Userserializers, Orderserializers, Stockserializers, Productserializers, LoginSerializer, \
     MyTokenObtainPairSerializer, SingupSerializer
 
-
-# Create your views here.
-# class EmpInfoViewSet(viewsets.ModelViewSet):
-#     queryset = EmpInfo.objects.all()
-#     serializer_class = EmpInfoserializers
-#
-# class LoginInfoViewSet(viewsets.ModelViewSet):
-#     queryset = LoginInfo.objects.all()
-#     serializer_class = LoginInfoserializers
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = Userserializers
