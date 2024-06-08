@@ -9,8 +9,3 @@ MeatProject/MeatApp/__pycache__
 .venv
 MeatProject/MeatApp/migrations/__pycache__
 MeatProject/__pycache__
-MeatProject/MeatProject/__pycache__/__init__.cpython-312.pyc
-MeatProject/MeatProject/__pycache__/private_settings.cpython-312.pyc
-MeatProject/MeatProject/__pycache__/settings.cpython-312.pyc
-MeatProject/MeatProject/__pycache__/urls.cpython-312.pyc
-MeatProject/MeatProject/__pycache__/wsgi.cpython-312.pyc
