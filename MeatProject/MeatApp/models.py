@@ -175,7 +175,7 @@ class Order(models.Model):
     ETA = models.DateField()  # 입고 예정일
     Client = models.ForeignKey("Client", to_field='ClientName',on_delete=models.CASCADE, db_column="Client")  # 거래처
     OrderWeight = models.IntegerField()  # 발주 중량(KG)
-    Part = models.ForeignKey("MeatPart",to_field='code', on_delete=models.CASCADE, db_column="Part")  # 부위
+    Part = models.ForeignKey("MeatPart", to_field='code', on_delete=models.CASCADE, db_column="Part")  # 부위
     OrderPrice = models.IntegerField(default=0)  # 발주 금액(발주 시 예삭 매입 금액)
     OrderNo = models.CharField(max_length=100, blank=True, unique=True)  # 발주 번호
     OrderSituation = models.CharField(max_length=100)  # 상태
@@ -227,7 +227,7 @@ class Stock(models.Model):
     ID = models.AutoField(primary_key=True)  # 번호
     OrderNo = models.ForeignKey("Order", to_field='OrderNo', on_delete=models.CASCADE, db_column="OrderNo", unique=True)  # 발주 번호 (외래키, 이걸로 발주일시, 입고 예정일 등등 가져올것)
     StockDate = models.DateField() # 입고 일시
-    StockWorker = models.ForeignKey(User,to_field='empNo',on_delete=models.CASCADE, db_column="StockWorker")  # 입고자명(로그인한 계정명으로 가져올것)
+    StockWorker = models.ForeignKey(User,to_field='empNo', on_delete=models.CASCADE, db_column="StockWorker")  # 입고자명(로그인한 계정명으로 가져올것)
     Stockitem = models.CharField(max_length=100)  # 입고 품목
     RealWeight = models.IntegerField(default=0)  # 실 중량
     RealPrice = models.IntegerField(default=0)  # 실 매입가
@@ -266,7 +266,7 @@ class Product(models.Model):
     ID = models.AutoField(primary_key=True)  # 번호
     StockNo = models.ForeignKey("Stock",to_field='StockNo', on_delete=models.CASCADE, db_column="StockNo")  # 입고 번호 (외래키, 이걸로 입고일시, 입고자명 등등 가져올것)
     ProductDate = models.DateTimeField(auto_now_add=True)  # 작업일(요일)
-    ProductWorker = models.ForeignKey(User,to_field='empNo',on_delete=models.CASCADE, db_column="ProductWorker")  # 작업자명(로그인한 계정명으로 가져올것)
+    ProductWorker = models.ForeignKey(User,to_field='empNo', on_delete=models.CASCADE, db_column="ProductWorker")  # 작업자명(로그인한 계정명으로 가져올것)
     WeightAfterWork = models.IntegerField(default=0)  # 작업 후 중량(KG)
     LossWeight = models.IntegerField(default=0)  # 로스((실중량 - 작업 후 중량)/실중량 = 로스율) #프론트에서 계산 할 수도 있음
     ProductPrice = models.IntegerField(default=0)  # 단가(작업 후 중량 기준으로 1000g/1kg당 가격)
@@ -302,10 +302,10 @@ class Product(models.Model):
 # 주문/주문 등록(order와 겹쳐서 purchase로 설정함)
 class Purchase(models.Model):
     ID = models.AutoField(primary_key=True)  # 번호
-    ProductNo = models.ForeignKey("Product", on_delete=models.CASCADE, db_column="ProductNo")  # 제품 번호 (외래키, 이걸로 제품명, 가격 등등 가져올것)
+    ProductNo = models.ForeignKey("Product", to_field='ProductNo', on_delete=models.CASCADE, db_column="ProductNo")  # 제품 번호 (외래키, 이걸로 제품명, 가격 등등 가져올것)
     PurchaseDate = models.DateTimeField(auto_now_add=True)  # 등록일(요일)
     # 구분이 뭔지 모르겠음
-    Purchaser = models.ForeignKey(User, on_delete=models.CASCADE, db_column="Purchaser")  # 주문자(로그인한 계정명으로 가져올것)
+    Purchaser = models.ForeignKey(User, to_field='empNo',on_delete=models.CASCADE, db_column="Purchaser")  # 주문자(로그인한 계정명으로 가져올것)
     PurchaseAddress = models.CharField(max_length=100)  # 주소
     PurchasePhone = models.CharField(max_length=100)  # 연락처
     PurchaseNo = models.CharField(max_length=100, blank=True, unique=True)  # 주문 번호
@@ -314,11 +314,20 @@ class Purchase(models.Model):
     def __str__(self):
         return str(self.PurchaseNo)
 
-    # def auto_generate_purchase_no(self):
-    #     return self.PurchaseNo 주문번호 자동 생성
+    def save(self, *args, **kwargs):
+        if not self.PurchaseNo:
+            last_purchase = Purchase.objects.all().order_by('ID').last()
+            if last_purchase:
+                last_purchase_no = int(last_purchase.PurchaseNo)
+                new_purchase_no = last_purchase_no + 1
+                self.PurchaseNo = str(new_purchase_no).zfill(4)  # 4자리수로 맞춤
+            else:
+                self.PurchaseNo = '0001'
+        super().save(*args, **kwargs)
 
     def was_published_recently(self):
         return self.created_at >= timezone.now() - datetime.timedelta(days=1)
+    
 
 
 # 주문/작업지시서
@@ -328,19 +337,16 @@ class Purchase(models.Model):
 
 # 주문/배송사고
 class DeliveryAccident(models.Model):
-    WaybillNo = models.CharField(max_length=100, primary_key=True)  # 운송장 번호
+    WaybillNo = models.CharField(max_length=100, primary_key=True)  # 운송장 번호, 아마 실제 택배사에서 받아오는 번호
     Recipient = models.CharField(max_length=100)  # 받는 분
     TotalFreight = models.IntegerField(default=0)  # 총 운임
     ProductValue = models.IntegerField(default=0)  # 상품 가액
     Reimbursement = models.IntegerField(default=0)  # 변상요청금액
-    PurchaseDate = models.ForeignKey("Purchase", on_delete=models.CASCADE, db_column="PurchaseDate")  # 등록 일자
+    PurchaseDate = models.ForeignKey("Purchase", to_field='PurchaseNo', on_delete=models.CASCADE, db_column="PurchaseDate")  # 등록 일자
     ShippingDate = models.DateField()  # 발송일자
 
     def __str__(self):
         return str(self.WaybillNo)
-
-    # def auto_generate_waybill_no(self):
-    #     return self.WaybillNo 운송장번호 자동 생성_프라이머리키로 설정했기 때문에 오류를 우려하여 나중에 추가할 예정
 
     def was_published_recently(self):
         return self.created_at >= timezone.now() - datetime.timedelta(days=1)
@@ -386,3 +392,24 @@ class Client(models.Model):
 
     def was_published_recently(self):
         return self.created_at >= timezone.now() - datetime.timedelta(days=1)
+    
+
+# 기타/기타비용
+class OtherCost(models.Model):
+    ID = models.AutoField(primary_key=True)  # 번호
+    Category = models.CharField(max_length=100)  # 유형
+    SubsidiaryMaterial = models.CharField(max_length=100)  # 부자재 명
+    Quntity = models.IntegerField(default=0)  # 수량
+    Price = models.IntegerField(default=0)  # 단가
+    TotalPrice = models.IntegerField(default=0)  # 금액
+    Client = models.ForeignKey("Client", to_field='ClientName',on_delete=models.CASCADE, db_column="Client")  # 거래처
+    CostSituation = models.CharField(max_length=100)  # 상태
+
+    def __str__(self):
+        return str(self.SubsidiaryMaterial)
+
+    def was_published_recently(self):
+        return self.created_at >= timezone.now() - datetime.timedelta(days=1)
+    
+
+# 기타/지육, 제품 추가 이건 성재랑 상의좀 하자

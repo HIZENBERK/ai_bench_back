@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.forms import UserChangeForm, UserCreationForm
-from .models import User, Order, Stock, Product, Purchase, DeliveryAccident, InOutCome, Client, MeatPart
+from .models import User, Order, Stock, Product, Purchase, DeliveryAccident, InOutCome, Client, MeatPart, OtherCost
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.utils.translation import gettext as _
 
@@ -13,6 +13,12 @@ admin.site.register(Stock)
 admin.site.register(Product)
 admin.site.register(Client)
 admin.site.register(MeatPart)
+admin.site.register(Purchase)
+admin.site.register(DeliveryAccident)
+#admin.site.register(InOutCome)
+admin.site.register(OtherCost)
+
+
 class UserAdmin(BaseUserAdmin):
     form = UserChangeForm
     add_form = UserCreationForm
