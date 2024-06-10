@@ -274,7 +274,7 @@ class Product(models.Model):
     ProductNo = models.CharField(max_length=100, blank=True, unique=True)  # 제품 번호
     ProductSituation = models.CharField(max_length=100)  # 상태
     Quantity = models.IntegerField(default=0)  # 수량(제품 수량, 제품 상세에 있어서 만듬)
-
+    PurchaseNo = models.ForeignKey("Purchase", to_field='PurchaseNo', on_delete=models.SET_NULL,null=True, db_column="PurchaseNo", blank=True)
     def __str__(self):
         return str(self.ProductNo)
     
@@ -302,20 +302,28 @@ class Product(models.Model):
 # 주문/주문 등록(order와 겹쳐서 purchase로 설정함)
 class Purchase(models.Model):
     ID = models.AutoField(primary_key=True)  # 번호
-    ProductNo = models.ForeignKey("Product", on_delete=models.CASCADE, db_column="ProductNo")  # 제품 번호 (외래키, 이걸로 제품명, 가격 등등 가져올것)
+    #ProductNo = models.ForeignKey("Product", on_delete=models.CASCADE, db_column="ProductNo")  # 제품 번호 (외래키, 이걸로 제품명, 가격 등등 가져올것)
     PurchaseDate = models.DateTimeField(auto_now_add=True)  # 등록일(요일)
-    # 구분이 뭔지 모르겠음
+    # 구분이 뭔지 모르겠음 -> 주문 진행 상태 말하는 것 같음 임시로 하나 만듬
+    PurchaseStep = models.CharField(max_length=10)
     Purchaser = models.ForeignKey(User, on_delete=models.CASCADE, db_column="Purchaser")  # 주문자(로그인한 계정명으로 가져올것)
     PurchaseAddress = models.CharField(max_length=100)  # 주소
-    PurchasePhone = models.CharField(max_length=100)  # 연락처
-    PurchaseNo = models.CharField(max_length=100, blank=True, unique=True)  # 주문 번호
+    PurchasePhone = models.CharField(max_length=15)  # 연락처
+    PurchaseNo = models.CharField(max_length=10, blank=True, unique=True)  # 주문 번호
     Wrapping = models.BooleanField(default=False)  # 선물포장 여부
 
     def __str__(self):
         return str(self.PurchaseNo)
 
-    # def auto_generate_purchase_no(self):
-    #     return self.PurchaseNo 주문번호 자동 생성
+    def save(self, *args, **kwargs):
+        if not self.PurchaseNo:
+            last_number = Purchase.objects.order_by('-PurchaseNo').first()
+            if last_number:
+                next_number = str(int(last_number.number) + 1).zfill(5)
+            else:
+                next_number = '00001'
+            self.PurchaseNo = next_number
+        super(Purchase, self).save(*args, **kwargs)
 
     def was_published_recently(self):
         return self.created_at >= timezone.now() - datetime.timedelta(days=1)
@@ -340,7 +348,7 @@ class DeliveryAccident(models.Model):
         return str(self.WaybillNo)
 
     # def auto_generate_waybill_no(self):
-    #     return self.WaybillNo 운송장번호 자동 생성_프라이머리키로 설정했기 때문에 오류를 우려하여 나중에 추가할 예정
+    #     return self.WaybillNo 운송장번호 자동 생성_프라이머리키로 설정했기 때문에 오류를 우려하여 나중에 추가할 예정- 성재:운송장은 우체국에서 던져주는 거라 필요할 지? https://blog.naver.com/okuk81/221516678226 이런 api로 송장번호 생성하는 듯
 
     def was_published_recently(self):
         return self.created_at >= timezone.now() - datetime.timedelta(days=1)
