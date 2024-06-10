@@ -2,13 +2,14 @@ from django.http import JsonResponse
 from rest_framework import viewsets, status, generics
 from rest_framework.authtoken.admin import User
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 
-from .models import User, Order, Stock, Product, Client
+from .models import User, Order, Stock, Product, Client, MeatPart
 from .serializers import Userserializers, OrderSerializers, StockSerializers, ProductSerializers, LoginSerializer, \
-    MyTokenObtainPairSerializer, SingupSerializer, ClientSerializers
+    MyTokenObtainPairSerializer, SingupSerializer, ClientSerializers, MeatPartSerializers
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
@@ -53,37 +54,52 @@ class SignupView(APIView):
         return JsonResponse(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-# class OrderView(APIView):
-#     def post(self, request):
-#         serializer = Orderserializers(data=request.data)
-#         if serializer.is_valid():
-#             order = Order(
-#                 EmpNo=serializer.validated_data['empNo'],
-#                 OrderDate=serializer.validated_data['OrderDate'],
-#                 OrderWeight=serializer.validated_data['OrderWeight'],
-#                 ETA = serializer.validated_data['OrderWeight'],
-#                 Part = serializer.validated_data['OrderWeight'],
-#                 Client = serializer.validated_data['OrderWeight'],
-#                 OderPrice = serializer.validated_data['OrderWeight'],
-#             )
-#             order.EmpNo = User.empNo()
-#             order.save()
-#
-#             return JsonResponse({
-#                 'empNo': order.EmpNo,
-#                 # 'password': password
-#                 # 'password': password
-#                 # 'password': password
-#                 # 'password': password
-#                 # 'password': password
-#                 # 'password': password
-#             }, status=status.HTTP_201_CREATED)
-#         return JsonResponse(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+class OrderView(APIView):
+    # def post(self, request):
+    #     serializer = OrderSerializers(data=request.data)
+    #     if serializer.is_valid():
+    #         order = Order(
+    #             EmpNo=serializer.validated_data['empNo'],
+    #             OrderDate=serializer.validated_data['OrderDate'],
+    #             OrderWeight=serializer.validated_data['OrderWeight'],
+    #             ETA = serializer.validated_data['OrderWeight'],
+    #             Part = serializer.validated_data['OrderWeight'],
+    #             Client = serializer.validated_data['OrderWeight'],
+    #             OderPrice = serializer.validated_data['OrderWeight'],
+    #         )
+    #         order.EmpNo = User.empNo()
+    #         order.save()
+    #
+    #         return JsonResponse({
+    #             'empNo': order.EmpNo,
+    #         }, status=status.HTTP_201_CREATED)
+    #     return JsonResponse(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    def get(self, request):
+        queryset = Order.objects.all()
+        serializer = OrderSerializers(queryset, many=True)
+        print(serializer.data)
+        return JsonResponse(serializer.data, safe=False)
 
 class ClientInfoView(APIView):
     def get(self, request):
         queryset = Client.objects.all()
+        serializer = ClientSerializers(queryset, many=True,fields=('ID', 'ClientName'))
+        return JsonResponse(serializer.data, safe=False)
+
+class ClientView(APIView):
+    def get(self, request):
+        queryset = Client.objects.all()
         serializer = ClientSerializers(queryset, many=True)
+        return JsonResponse(serializer.data, safe=False)
+class MeatPartInfoView(APIView):
+    def get(self, request):
+        queryset = MeatPart.objects.all()
+        serializer = MeatPartSerializers(queryset, many=True, fields='name')
+        return JsonResponse(serializer.data, safe=False)
+class MeatPartView(APIView):
+    def get(self, request):
+        queryset = MeatPart.objects.all()
+        serializer = MeatPartSerializers(queryset, many=True)
         return JsonResponse(serializer.data, safe=False)
 
 class MyTokenObtainPairView(TokenObtainPairView):
@@ -126,10 +142,10 @@ class LogoutView(APIView):
     def post(self, request):
         print(request.data["refreshToken"])
         try:
-            refreshToken = request.data["refreshToken"]
-            RefreshToken.blacklist(refreshToken)
+            refresh_token  = request.data["refresh_token "]
+            token = RefreshToken(refresh_token)
+            token.blacklist()
 
-            return JsonResponse({"message": "Logout successful"}, status=status.HTTP_205_RESET_CONTENT)
+            return Response(status=status.HTTP_205_RESET_CONTENT)
         except Exception as e:
-            print(str(e))
-            return JsonResponse({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(status=status.HTTP_400_BAD_REQUEST)

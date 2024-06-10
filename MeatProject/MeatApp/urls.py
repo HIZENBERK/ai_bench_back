@@ -6,8 +6,6 @@ from rest_framework_simplejwt.views import (
     TokenRefreshView,
 )
 router = DefaultRouter()
-# router.register(r'empinfo', views.EmpInfoViewSet)
-# router.register(r'logininfo', views.LoginInfoViewSet)
 router.register(r'user', views.UserViewSet)
 router.register(r'order', views.OrderViewSet)
 router.register(r'stock', views.StockViewSet)
@@ -19,8 +17,8 @@ urlpatterns = [
     path('login/', views.LoginView.as_view(), name='login'),
     path('logout/', views.LogoutView.as_view(), name='logout'),
     path('user/', views.UserViewSet.as_view({'get': 'list', 'post': 'create'}), name='user-list'),
-    path('order/', views.OrderViewSet.as_view({'get': 'list', 'post': 'create'}), name='order-list'),
-    path('order/&lt;int:pk&gt;/', views.OrderViewSet.as_view({'get': 'retrieve', 'put': 'update', 'delete': 'destroy'}), name='order-detail'),
+    # path('order/', views.OrderViewSet.as_view({'get': 'list', 'post': 'create'}), name='order-list'),
+    # path('order/&lt;int:pk&gt;/', views.OrderViewSet.as_view({'get': 'retrieve', 'put': 'update', 'delete': 'destroy'}), name='order-detail'),
     path('stock/', views.StockViewSet.as_view({'get': 'list', 'post': 'create'}), name='stock-list'),
     path('stock/&lt;int:pk&gt;/', views.StockViewSet.as_view({'get': 'retrieve', 'put': 'update', 'delete': 'destroy'}), name='stock-detail'),
     path('product/', views.ProductViewSet.as_view({'get': 'list', 'post': 'create'}), name='product-list'),
@@ -30,4 +28,8 @@ urlpatterns = [
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('register/', views.RegisterView.as_view(), name='auth_register'),
     path('ClientInfo/', views.ClientInfoView.as_view(), name='client_info'),
+    path('Client/', views.ClientView.as_view(), name='client'),
+    path('MeatPartInfo/', views.MeatPartInfoView.as_view(), name='meat_part_info'),
+    path('MeatPart/', views.MeatPartView.as_view(), name='meat_part_info'),
+    path('order/', views.OrderView.as_view(), name='order'),
 ]

@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
-from .models import User, Order, Stock, Product, Client
+from .models import User, Order, Stock, Product, Client, MeatPart
 
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
     @classmethod
@@ -57,4 +57,9 @@ class ProductSerializers(serializers.ModelSerializer):
 class ClientSerializers(serializers.ModelSerializer):
     class Meta:
         model = Client
+        fields = '__all__'
+
+class MeatPartSerializers(serializers.ModelSerializer):
+    class Meta:
+        model = MeatPart
         fields = '__all__'
