@@ -15,13 +15,9 @@ router.register(r'product', views.ProductViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),
-    #path('login/', include('rest_framework.urls')),
     path('admin/', views.LoginView.as_view(), name='admin'),
     path('login/', views.LoginView.as_view(), name='login'),
-    # path('empinfo/', views.EmpInfoViewSet.as_view({'get': 'list', 'post': 'create'}), name='empinfo-list'),
-    # path('empinfo/&lt;int:pk&gt;/', views.EmpInfoViewSet.as_view({'get': 'retrieve', 'put': 'update', 'delete': 'destroy'}), name='empinfo-detail'),
-    # path('logininfo/', views.LoginInfoViewSet.as_view({'get': 'list', 'post': 'create'}), name='logininfo-list'),
-    # path('logininfo/&lt;int:pk&gt;/', views.LoginInfoViewSet.as_view({'get': 'retrieve', 'put': 'update', ' delete': 'destroy'}), name='logininfo-detail'),
+    path('logout/', views.LogoutView.as_view(), name='logout'),
     path('user/', views.UserViewSet.as_view({'get': 'list', 'post': 'create'}), name='user-list'),
     path('order/', views.OrderViewSet.as_view({'get': 'list', 'post': 'create'}), name='order-list'),
     path('order/&lt;int:pk&gt;/', views.OrderViewSet.as_view({'get': 'retrieve', 'put': 'update', 'delete': 'destroy'}), name='order-detail'),
@@ -33,4 +29,5 @@ urlpatterns = [
     path('token/', views.MyTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('register/', views.RegisterView.as_view(), name='auth_register'),
+    path('ClientInfo/', views.ClientInfoView.as_view(), name='client_info'),
 ]

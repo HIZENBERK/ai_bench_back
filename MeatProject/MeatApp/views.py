@@ -1,14 +1,14 @@
 from django.http import JsonResponse
 from rest_framework import viewsets, status, generics
 from rest_framework.authtoken.admin import User
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 
-from .models import User, Order, Stock, Product
-from .serializers import Userserializers, Orderserializers, Stockserializers, Productserializers, LoginSerializer, \
-    MyTokenObtainPairSerializer, SingupSerializer
+from .models import User, Order, Stock, Product, Client
+from .serializers import Userserializers, OrderSerializers, StockSerializers, ProductSerializers, LoginSerializer, \
+    MyTokenObtainPairSerializer, SingupSerializer, ClientSerializers
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
@@ -17,17 +17,17 @@ class UserViewSet(viewsets.ModelViewSet):
 
 class OrderViewSet(viewsets.ModelViewSet):
     queryset = Order.objects.all()
-    serializer_class = Orderserializers
+    serializer_class = OrderSerializers
 
 
 class StockViewSet(viewsets.ModelViewSet):
     queryset = Stock.objects.all()
-    serializer_class = Stockserializers
+    serializer_class = StockSerializers
 
 
 class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all()
-    serializer_class = Productserializers
+    serializer_class = ProductSerializers
 
 
 # 토큰을 이용한 회원가입
@@ -80,6 +80,11 @@ class SignupView(APIView):
 #             }, status=status.HTTP_201_CREATED)
 #         return JsonResponse(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+class ClientInfoView(APIView):
+    def get(self, request):
+        queryset = Client.objects.all()
+        serializer = ClientSerializers(queryset, many=True)
+        return JsonResponse(serializer.data, safe=False)
 
 class MyTokenObtainPairView(TokenObtainPairView):
     serializer_class = MyTokenObtainPairSerializer
@@ -115,3 +120,16 @@ class LoginView(APIView):
                 return JsonResponse({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
         else:
             return JsonResponse(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class LogoutView(APIView):
+    permission_classes = (IsAuthenticated,)
+    def post(self, request):
+        print(request.data["refreshToken"])
+        try:
+            refreshToken = request.data["refreshToken"]
+            RefreshToken.blacklist(refreshToken)
+
+            return JsonResponse({"message": "Logout successful"}, status=status.HTTP_205_RESET_CONTENT)
+        except Exception as e:
+            print(str(e))
+            return JsonResponse({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)

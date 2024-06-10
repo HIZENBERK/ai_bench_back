@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
-from .models import User, Order, Stock, Product
+from .models import User, Order, Stock, Product, Client
 
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
     @classmethod
@@ -39,17 +39,22 @@ class LoginSerializer(serializers.Serializer):
     password = serializers.CharField(max_length=128, write_only=True)
 
 
-class Orderserializers(serializers.ModelSerializer):
+class OrderSerializers(serializers.ModelSerializer):
     class Meta:
         model = Order
         fields = '__all__'
 
-class Stockserializers(serializers.ModelSerializer):
+class StockSerializers(serializers.ModelSerializer):
     class Meta:
         model = Stock
         fields = '__all__'
 
-class Productserializers(serializers.ModelSerializer):
+class ProductSerializers(serializers.ModelSerializer):
     class Meta:
         model = Product
+        fields = '__all__'
+
+class ClientSerializers(serializers.ModelSerializer):
+    class Meta:
+        model = Client
         fields = '__all__'
