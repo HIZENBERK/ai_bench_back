@@ -9,7 +9,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 
 from .models import User, Order, Stock, Product, Client, MeatPart
 from .serializers import Userserializers, OrderSerializers, StockSerializers, ProductSerializers, LoginSerializer, \
-    MyTokenObtainPairSerializer, SingupSerializer, ClientSerializers, MeatPartSerializers
+    MyTokenObtainPairSerializer, SingupSerializer, ClientSerializers, MeatPartSerializers, MeatPartInfoSerializers, ClientInfoSerializers
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
@@ -83,7 +83,7 @@ class OrderView(APIView):
 class ClientInfoView(APIView):
     def get(self, request):
         queryset = Client.objects.all()
-        serializer = ClientSerializers(queryset, many=True,fields=('ID', 'ClientName'))
+        serializer = ClientInfoSerializers(queryset, many=True)
         return JsonResponse(serializer.data, safe=False)
 
 class ClientView(APIView):
@@ -94,7 +94,7 @@ class ClientView(APIView):
 class MeatPartInfoView(APIView):
     def get(self, request):
         queryset = MeatPart.objects.all()
-        serializer = MeatPartSerializers(queryset, many=True, fields='name')
+        serializer = MeatPartInfoSerializers(queryset, many=True)
         return JsonResponse(serializer.data, safe=False)
 class MeatPartView(APIView):
     def get(self, request):

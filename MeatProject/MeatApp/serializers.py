@@ -59,7 +59,17 @@ class ClientSerializers(serializers.ModelSerializer):
         model = Client
         fields = '__all__'
 
+class ClientInfoSerializers(serializers.ModelSerializer):
+    class Meta:
+        model = Client
+        fields = ('ID', 'ClientName')
+
 class MeatPartSerializers(serializers.ModelSerializer):
     class Meta:
         model = MeatPart
         fields = '__all__'
+
+class MeatPartInfoSerializers(serializers.ModelSerializer):
+    class Meta:
+        model = MeatPart
+        fields = ('name')

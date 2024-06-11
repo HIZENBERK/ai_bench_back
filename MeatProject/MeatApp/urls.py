@@ -30,6 +30,6 @@ urlpatterns = [
     path('ClientInfo/', views.ClientInfoView.as_view(), name='client_info'),
     path('Client/', views.ClientView.as_view(), name='client'),
     path('MeatPartInfo/', views.MeatPartInfoView.as_view(), name='meat_part_info'),
-    path('MeatPart/', views.MeatPartView.as_view(), name='meat_part_info'),
+    path('MeatPart/', views.MeatPartView.as_view(), name='meat_part'),
     path('order/', views.OrderView.as_view(), name='order'),
 ]
