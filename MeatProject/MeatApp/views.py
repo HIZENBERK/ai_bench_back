@@ -87,8 +87,14 @@ class StockView(APIView):
     def get(self, request):
         queryset = Stock.objects.all()
         serializer = StockSerializers(queryset, many=True)
-        print(serializer.data)
-        return JsonResponse(serializer.data, safe=False)
+        return Response(serializer.data)
+
+    def post(self, request):
+        serializer = StockSerializers(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class StockWorkerView(APIView):
     def get(self, request):

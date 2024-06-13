@@ -33,5 +33,5 @@ urlpatterns = [
     path('MeatPart/', views.MeatPartView.as_view(), name='meat_part'),
     path('order/', views.OrderView.as_view(), name='order'),
     path('stock/', views.StockView.as_view(), name='stock'),
-    path ('stockworker/', views.StockWorkerView.as_view(), name='stockworker'),
+    path('stockworker/', views.StockWorkerView.as_view(), name='stockworker'),
 ]
