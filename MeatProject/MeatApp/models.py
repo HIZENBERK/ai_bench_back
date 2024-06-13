@@ -149,8 +149,8 @@ class User(AbstractBaseUser, PermissionsMixin):
 
 # 부위
 class MeatPart(models.Model):
-    name = models.CharField(verbose_name=('Part name'),max_length=100, unique=True)  # 부위 이름
-    code = models.CharField(verbose_name=('Part code'),max_length=5, unique=True, blank=True)  # 부위 고유 번호
+    name = models.CharField(verbose_name='Part name', max_length=100, unique=True)  # 부위 이름
+    code = models.CharField(verbose_name='Part code', max_length=5, unique=True, blank=True)  # 부위 고유 번호
 
     def save(self, *args, **kwargs):
         if not self.code:

@@ -9,7 +9,8 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 
 from .models import User, Order, Stock, Product, Client, MeatPart
 from .serializers import Userserializers, OrderSerializers, StockSerializers, ProductSerializers, LoginSerializer, \
-    MyTokenObtainPairSerializer, SingupSerializer, ClientSerializers, MeatPartSerializers, MeatPartInfoSerializers, ClientInfoSerializers
+    MyTokenObtainPairSerializer, SingupSerializer, ClientSerializers, MeatPartSerializers, MeatPartInfoSerializers, \
+    ClientInfoSerializers, OrderInfoSerializers
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
@@ -55,29 +56,31 @@ class SignupView(APIView):
 
 
 class OrderView(APIView):
-    # def post(self, request):
-    #     serializer = OrderSerializers(data=request.data)
-    #     if serializer.is_valid():
-    #         order = Order(
-    #             EmpNo=serializer.validated_data['empNo'],
-    #             OrderDate=serializer.validated_data['OrderDate'],
-    #             OrderWeight=serializer.validated_data['OrderWeight'],
-    #             ETA = serializer.validated_data['OrderWeight'],
-    #             Part = serializer.validated_data['OrderWeight'],
-    #             Client = serializer.validated_data['OrderWeight'],
-    #             OderPrice = serializer.validated_data['OrderWeight'],
-    #         )
-    #         order.EmpNo = User.empNo()
-    #         order.save()
-    #
-    #         return JsonResponse({
-    #             'empNo': order.EmpNo,
-    #         }, status=status.HTTP_201_CREATED)
-    #     return JsonResponse(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    def post(self, request):
+        serializer = OrderSerializers(data=request.data)
+        if serializer.is_valid():
+            part_name = serializer.validated_data['PartName']
+            try:
+                part = MeatPart.objects.get(name=part_name)
+                order = Order(
+                    OrderDate=serializer.validated_data['OrderDate'],
+                    OrderWorker=serializer.validated_data['OrderWorker'],
+                    ETA=serializer.validated_data['ETA'],
+                    Client=serializer.validated_data['Client'],
+                    OrderWeight=serializer.validated_data['OrderWeight'],
+                    Part=part.code,  # MeatPart의 code를 Order의 Part에 할당
+                    OderPrice=serializer.validated_data['OderPrice'],
+                    OrderSituation='발주완료'  # 상태
+                )
+                order.save()
+                return JsonResponse({'message': '발주 생성 완료'}, status=status.HTTP_201_CREATED)
+            except MeatPart.DoesNotExist:
+                return JsonResponse({'error': '발주 생성 실패.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        return JsonResponse(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     def get(self, request):
         queryset = Order.objects.all()
-        serializer = OrderSerializers(queryset, many=True)
-        print(serializer.data)
+        serializer = OrderInfoSerializers(queryset, many=True)
         return JsonResponse(serializer.data, safe=False)
 
 class ClientInfoView(APIView):

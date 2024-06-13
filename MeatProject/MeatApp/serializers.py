@@ -38,11 +38,34 @@ class LoginSerializer(serializers.Serializer):
     empNo = serializers.CharField(max_length=10)
     password = serializers.CharField(max_length=128, write_only=True)
 
+class MeatPartSerializers(serializers.ModelSerializer):
+    class Meta:
+        model = MeatPart
+        fields = '__all__'
+
+class MeatPartInfoSerializers(serializers.ModelSerializer):
+    class Meta:
+        model = MeatPart
+        fields = [ 'name']
 
 class OrderSerializers(serializers.ModelSerializer):
     class Meta:
         model = Order
         fields = '__all__'
+
+class OrderInfoSerializers(serializers.ModelSerializer):
+    partName = serializers.CharField(source='Order.name', read_only=True)
+    class Meta:
+        model = Order
+        fields = ('Id','OrderDate','ETA,Client','OrderWeight','OrderPrice','OrderSituation' ,'OrderNo','partName')
+
+    # def get_part_name(self, obj):
+    #     try:
+    #         part = MeatPart.objects.get(code=obj.Part)
+    #         print(part.name)
+    #         return part.name
+    #     except MeatPart.DoesNotExist:
+    #         return None
 
 class StockSerializers(serializers.ModelSerializer):
     class Meta:
@@ -62,14 +85,5 @@ class ClientSerializers(serializers.ModelSerializer):
 class ClientInfoSerializers(serializers.ModelSerializer):
     class Meta:
         model = Client
-        fields = ('ID', 'ClientName')
+        fields = ['ClientName']
 
-class MeatPartSerializers(serializers.ModelSerializer):
-    class Meta:
-        model = MeatPart
-        fields = '__all__'
-
-class MeatPartInfoSerializers(serializers.ModelSerializer):
-    class Meta:
-        model = MeatPart
-        fields = ('name')
