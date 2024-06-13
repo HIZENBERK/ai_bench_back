@@ -19,8 +19,8 @@ urlpatterns = [
     path('user/', views.UserViewSet.as_view({'get': 'list', 'post': 'create'}), name='user-list'),
     # path('order/', views.OrderViewSet.as_view({'get': 'list', 'post': 'create'}), name='order-list'),
     # path('order/&lt;int:pk&gt;/', views.OrderViewSet.as_view({'get': 'retrieve', 'put': 'update', 'delete': 'destroy'}), name='order-detail'),
-    path('stock/', views.StockViewSet.as_view({'get': 'list', 'post': 'create'}), name='stock-list'),
-    path('stock/&lt;int:pk&gt;/', views.StockViewSet.as_view({'get': 'retrieve', 'put': 'update', 'delete': 'destroy'}), name='stock-detail'),
+    # path('stock/', views.StockViewSet.as_view({'get': 'list', 'post': 'create'}), name='stock-list'),
+    # path('stock/&lt;int:pk&gt;/', views.StockViewSet.as_view({'get': 'retrieve', 'put': 'update', 'delete': 'destroy'}), name='stock-detail'),
     path('product/', views.ProductViewSet.as_view({'get': 'list', 'post': 'create'}), name='product-list'),
     path('product/&lt;int:pk&gt;/', views.ProductViewSet.as_view({'get': 'retrieve', 'put': 'update', ' delete': 'destroy'}), name='product-detail'),
     path('signup/', views.SignupView.as_view(), name="signup"),
@@ -32,4 +32,6 @@ urlpatterns = [
     path('MeatPartInfo/', views.MeatPartInfoView.as_view(), name='meat_part_info'),
     path('MeatPart/', views.MeatPartView.as_view(), name='meat_part'),
     path('order/', views.OrderView.as_view(), name='order'),
+    path('stock/', views.StockView.as_view(), name='stock'),
+    path ('stockworker/', views.StockWorkerView.as_view(), name='stockworker'),
 ]
