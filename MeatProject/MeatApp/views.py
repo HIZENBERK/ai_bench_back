@@ -10,7 +10,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from .models import User, Order, Stock, Product, Client, MeatPart
 from .serializers import Userserializers, OrderSerializers, StockSerializers, ProductSerializers, LoginSerializer, \
     MyTokenObtainPairSerializer, SingupSerializer, ClientSerializers, MeatPartSerializers, MeatPartInfoSerializers, \
-    ClientInfoSerializers, OrderInfoSerializers
+    ClientInfoSerializers, OrderInfoSerializers, StockWorkerSerializers
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
@@ -83,6 +83,21 @@ class OrderView(APIView):
         serializer = OrderInfoSerializers(queryset, many=True)
         return JsonResponse(serializer.data, safe=False)
 
+class StockView(APIView):
+    def get(self, request):
+        queryset = Stock.objects.all()
+        serializer = StockSerializers(queryset, many=True)
+        print(serializer.data)
+        return JsonResponse(serializer.data, safe=False)
+
+class StockWorkerView(APIView):
+    def get(self, request):
+        queryset = Stock.objects.all()
+        serializer = StockWorkerSerializers(queryset, many=True)
+        print(serializer.data)
+        return JsonResponse(serializer.data, safe=False)
+
+
 class ClientInfoView(APIView):
     def get(self, request):
         queryset = Client.objects.all()
@@ -94,11 +109,13 @@ class ClientView(APIView):
         queryset = Client.objects.all()
         serializer = ClientSerializers(queryset, many=True)
         return JsonResponse(serializer.data, safe=False)
+
 class MeatPartInfoView(APIView):
     def get(self, request):
         queryset = MeatPart.objects.all()
         serializer = MeatPartInfoSerializers(queryset, many=True)
         return JsonResponse(serializer.data, safe=False)
+
 class MeatPartView(APIView):
     def get(self, request):
         queryset = MeatPart.objects.all()
