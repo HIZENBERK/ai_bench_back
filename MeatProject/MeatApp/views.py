@@ -115,6 +115,12 @@ class ClientView(APIView):
         serializer = ClientSerializers(queryset, many=True)
         return JsonResponse(serializer.data, safe=False)
 
+class ProductView(APIView):
+    def get(self, request):
+        queryset = Product.objects.all()
+        serializer = ProductSerializers(queryset, many=True)
+        return JsonResponse(serializer.data, safe=False)
+
 class MeatPartInfoView(APIView):
     def get(self, request):
         queryset = MeatPart.objects.all()
