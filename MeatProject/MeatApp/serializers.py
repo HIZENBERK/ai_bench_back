@@ -23,16 +23,6 @@ class SingupSerializer(serializers.Serializer):
     username = serializers.CharField(max_length=10)
     Position = serializers.CharField(max_length=5)
     Job = serializers.CharField(max_length=5)
-    # class Meta:
-    #     model = User
-    #     fields = ('username', 'Position', 'Job')
-
-    # def create(self, validated_data):
-    #     user = User.objects.create(
-    #         username=validated_data['username']
-    #     )
-    #     user.set_password(user.generate_password())
-    #     user.save()
 
 class LoginSerializer(serializers.Serializer):
     empNo = serializers.CharField(max_length=10)
@@ -42,23 +32,22 @@ class MeatPartSerializers(serializers.ModelSerializer):
     class Meta:
         model = MeatPart
         fields = '__all__'
-
 class MeatPartInfoSerializers(serializers.ModelSerializer):
     class Meta:
         model = MeatPart
-        fields = [ 'name']
+        fields = ['name', 'code']
 
 class OrderSerializers(serializers.ModelSerializer):
     class Meta:
         model = Order
         fields = '__all__'
 
+
+
 class OrderInfoSerializers(serializers.ModelSerializer):
-    partName = serializers.CharField(source='Order.name', read_only=True)
     class Meta:
         model = Order
-        fields = ('Id','OrderDate','ETA,Client','OrderWeight','OrderPrice','OrderSituation' ,'OrderNo','partName')
-
+        fields = '__all__'
     # def get_part_name(self, obj):
     #     try:
     #         part = MeatPart.objects.get(code=obj.Part)
@@ -75,7 +64,7 @@ class StockSerializers(serializers.ModelSerializer):
 class StockWorkerSerializers(serializers.ModelSerializer):
     class Meta:
         model = Stock
-        fields = ('StockWorker')
+        fields = ['StockWorker']
 
 class ProductSerializers(serializers.ModelSerializer):
     class Meta:
@@ -93,10 +82,7 @@ class ClientInfoSerializers(serializers.ModelSerializer):
         fields = ['ClientName']
 
 
-class MeatPartInfoSerializers(serializers.ModelSerializer):
-    class Meta:
-        model = MeatPart
-        fields = ('name')
+
 
 class DeliveryAccidentSerializers(serializers.ModelSerializer):
     class Meta:

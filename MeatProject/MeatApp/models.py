@@ -178,8 +178,8 @@ class Order(models.Model):
     Part = models.ForeignKey("MeatPart",to_field='code', on_delete=models.CASCADE, db_column="Part")  # 부위
     OrderPrice = models.IntegerField(default=0)  # 발주 금액(발주 시 예삭 매입 금액)
     OrderNo = models.CharField(max_length=100, blank=True, unique=True)  # 발주 번호
-    OrderSituation = models.CharField(max_length=100)  # 상태
-
+    OrderSituation = models.CharField(max_length=10)  # 상태
+    addDateTime = models.DateTimeField(auto_now=True, null=False)
     
     #발주번호는 발주가 등록되면 생성되면 발주번호 생성 규칙은 발주한 년/월/일/요일/부위 고유번호/ 발주업체 고유번호/ 당일 발주 순번 으로 한다. 
     #(y4/m2/d2/w1/p4/c4/0001)
@@ -212,7 +212,7 @@ class Order(models.Model):
         return self.created_at >= timezone.now() - datetime.timedelta(days=1)
 
     class Meta:
-        ordering = ['-OrderDate']
+        ordering = ['-addDateTime']
 
     @classmethod
     def reset_order_count(cls):
@@ -348,7 +348,8 @@ class DeliveryAccident(models.Model):
         return str(self.WaybillNo)
 
     # def auto_generate_waybill_no(self):
-    #     return self.WaybillNo 운송장번호 자동 생성_프라이머리키로 설정했기 때문에 오류를 우려하여 나중에 추가할 예정- 성재:운송장은 우체국에서 던져주는 거라 필요할 지? https://blog.naver.com/okuk81/221516678226 이런 api로 송장번호 생성하는 듯
+    #     return self.WaybillNo 운송장번호 자동 생성_프라이머리키로 설정했기 때문에 오류를 우려하여 나중에 추가할 예정
+    #     - 성재:운송장은 우체국에서 던져주는 거라 필요할 지? https://blog.naver.com/okuk81/221516678226 이런 api로 송장번호 생성하는 듯
 
     def was_published_recently(self):
         return self.created_at >= timezone.now() - datetime.timedelta(days=1)
