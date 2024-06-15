@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from rest_framework.fields import ReadOnlyField
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 from .models import User, Order, Stock, Product, Client, MeatPart, DeliveryAccident, Purchase, OtherCost
@@ -66,11 +67,20 @@ class StockWorkerSerializers(serializers.ModelSerializer):
         model = Stock
         fields = ['StockWorker']
 
-class ProductSerializers(serializers.ModelSerializer):
+class OrderToStockSerializers(serializers.ModelSerializer):
+    class Meta:
+        model = Order
+        fields = ('OrderNo', 'OrderDate', 'Client', 'OrderWeight', 'OrderPrice', 'Part')
+class StockToProductSerializers(serializers.ModelSerializer):
+    class Meta:
+        model = Stock
+        fields = ('OrderNo', 'StockNo','StockDate','StockWorker', 'Stockitem', 'RealWeight', 'RealPrice', 'MeterialNo', 'SlaugtherDate', 'UnitPrice')
+
+
+class ProductInfoSerializers(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = '__all__'
-
 class ClientSerializers(serializers.ModelSerializer):
     class Meta:
         model = Client
