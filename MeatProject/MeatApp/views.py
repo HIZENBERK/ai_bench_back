@@ -10,9 +10,11 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 
 from .models import User, Order, Stock, Product, Client, MeatPart
-from .serializers import Userserializers, OrderSerializers, StockSerializers, ProductSerializers, LoginSerializer, \
+from .serializers import Userserializers, OrderSerializers, StockSerializers, LoginSerializer, \
     MyTokenObtainPairSerializer, SingupSerializer, ClientSerializers, MeatPartSerializers, MeatPartInfoSerializers, \
-    ClientInfoSerializers, OrderInfoSerializers, StockWorkerSerializers
+    ClientInfoSerializers, OrderInfoSerializers, StockWorkerSerializers, ProductInfoSerializers, \
+    StockToProductSerializers, OrderToStockSerializers
+
 
 def IncomingPage(request):
     return render(request, 'IncomingPage.js')
@@ -32,9 +34,9 @@ class StockViewSet(viewsets.ModelViewSet):
     serializer_class = StockSerializers
 
 
-class ProductViewSet(viewsets.ModelViewSet):
-    queryset = Product.objects.all()
-    serializer_class = ProductSerializers
+# class ProductViewSet(viewsets.ModelViewSet):
+#     queryset = Product.objects.all()
+#     serializer_class = ProductSerializers
 
 
 # 토큰을 이용한 회원가입
@@ -126,6 +128,45 @@ class ClientView(APIView):
     def get(self, request):
         queryset = Client.objects.all()
         serializer = ClientSerializers(queryset, many=True)
+        return JsonResponse(serializer.data, safe=False)
+
+class ProductView(APIView):
+    def get(self, request):
+        product_data = Product.objects.all()
+        serializer = ProductInfoSerializers(product_data, many=True)
+
+        for item in serializer.data:
+            stock_no = item['StockNo']
+            try:
+                stock_link_data = Stock.objects.get(StockNo=stock_no)
+                stock_serializer = StockToProductSerializers(stock_link_data)
+                order_link_data = Order.objects.get(OrderNo=stock_link_data.OrderNo)
+                order_serializer = OrderToStockSerializers(order_link_data)
+                try:
+                    part_link_data = MeatPart.objects.get(code=order_serializer.data['Part'])
+                    part_serializer = MeatPartInfoSerializers(part_link_data)
+                    item['Part'] = part_serializer.data['name']
+                except MeatPart.DoesNotExist:
+                    item['Part'] = 'Part not found'
+
+                item['OrderDate'] = order_serializer.data['OrderDate']
+                item['Client'] = order_serializer.data['Client']
+                item['OrderWeight'] = order_serializer.data['OrderWeight']
+                item['OrderPrice']=order_serializer.data['OrderPrice']
+                item['StockDate'] = stock_serializer.data['StockDate']
+                item['StockWorker'] = stock_serializer.data['StockWorker']
+                item['Stockitem'] = stock_serializer.data['Stockitem']
+                item['RealWeight']=stock_serializer.data['RealWeight']
+                item['RealPrice']=stock_serializer.data['RealPrice']
+                item['MeterialNo']=stock_serializer.data['MeterialNo']
+                item['SlaugtherDate']=stock_serializer.data['SlaugtherDate']
+                item['UnitPrice']=stock_serializer.data['UnitPrice']
+                item['MeterialNo'] = stock_serializer.data['MeterialNo']
+            except Stock.DoesNotExist:
+                item['link_data'] = 'Stock data not found'
+            except Order.DoesNotExist:
+                item['link_data'] = 'Order data not found'
+
         return JsonResponse(serializer.data, safe=False)
 
 class MeatPartInfoView(APIView):
