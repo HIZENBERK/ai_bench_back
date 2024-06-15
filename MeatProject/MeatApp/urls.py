@@ -1,7 +1,7 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from . import views
-from .views import LoginView
+from .views import LoginView, LogoutView
 from rest_framework_simplejwt.views import (
     TokenRefreshView,
 )
@@ -15,7 +15,7 @@ urlpatterns = [
     path('', include(router.urls)),
     path('admin/', views.LoginView.as_view(), name='admin'),
     path('login/', views.LoginView.as_view(), name='login'),
-    path('logout/', views.LogoutView.as_view(), name='logout'),
+    #path('logout/', views.LogoutView.as_view(), name='logout'),
     path('user/', views.UserViewSet.as_view({'get': 'list', 'post': 'create'}), name='user-list'),
     # path('order/', views.OrderViewSet.as_view({'get': 'list', 'post': 'create'}), name='order-list'),
     # path('order/&lt;int:pk&gt;/', views.OrderViewSet.as_view({'get': 'retrieve', 'put': 'update', 'delete': 'destroy'}), name='order-detail'),
@@ -34,4 +34,6 @@ urlpatterns = [
     path('order/', views.OrderView.as_view(), name='order'),
     path('stock/', views.StockView.as_view(), name='stock'),
     path('stockworker/', views.StockWorkerView.as_view(), name='stockworker'),
+    path('logout/', LogoutView.as_view(), name='logout'),
+    path('incoming/', views.IncomingPage, name='IncomingPage'),
 ]

@@ -57,6 +57,8 @@ class OrderInfoSerializers(serializers.ModelSerializer):
     #         return None
 
 class StockSerializers(serializers.ModelSerializer):
+    OrderNo = serializers.SlugRelatedField(queryset=Order.objects.all(), slug_field='OrderNo')
+    
     class Meta:
         model = Stock
         fields = '__all__'
