@@ -265,7 +265,7 @@ class Stock(models.Model):
 class Product(models.Model):
     ID = models.AutoField(primary_key=True)  # 번호
     StockNo = models.ForeignKey("Stock",to_field='StockNo', on_delete=models.CASCADE, db_column="StockNo")  # 입고 번호 (외래키, 이걸로 입고일시, 입고자명 등등 가져올것)
-    ProductDate = models.DateTimeField(auto_now_add=True)  # 작업일(요일)
+    ProductDate = models.DateTimeField(auto_now=True)  # 작업일(요일)
     ProductWorker = models.ForeignKey(User,to_field='empNo',on_delete=models.CASCADE, db_column="ProductWorker")  # 작업자명(로그인한 계정명으로 가져올것)
     WeightAfterWork = models.IntegerField(default=0)  # 작업 후 중량(KG)
     LossWeight = models.IntegerField(default=0)  # 로스((실중량 - 작업 후 중량)/실중량 = 로스율) #프론트에서 계산 할 수도 있음

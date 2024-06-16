@@ -26,6 +26,7 @@ urlpatterns = [
     path('MeatPart/', views.MeatPartView.as_view(), name='meat_part'),
     path('order/', views.OrderView.as_view(), name='order'),
     path('stock/', views.StockView.as_view(), name='stock'),
+    path('stockInfo/', views.StockInfoView.as_view(), name='stock_info'),
     path('stockworker/', views.StockWorkerView.as_view(), name='stockworker'),
     path('logout/', LogoutView.as_view(), name='logout'),
     path('incoming/', views.IncomingPage, name='IncomingPage'),

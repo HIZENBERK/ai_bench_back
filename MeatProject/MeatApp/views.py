@@ -13,7 +13,7 @@ from .models import User, Order, Stock, Product, Client, MeatPart
 from .serializers import Userserializers, OrderSerializers, StockSerializers, LoginSerializer, \
     MyTokenObtainPairSerializer, SingupSerializer, ClientSerializers, MeatPartSerializers, MeatPartInfoSerializers, \
     ClientInfoSerializers, OrderInfoSerializers, StockWorkerSerializers, ProductInfoSerializers, \
-    StockToProductSerializers, OrderToStockSerializers
+    StockToProductSerializers, OrderToStockSerializers, StockInfoSerializers
 
 
 def IncomingPage(request):
@@ -110,6 +110,12 @@ class StockView(APIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+class StockInfoView(APIView):
+    def get(self, request):
+        queryset = Stock.objects.all()
+        serializer = StockInfoSerializers(queryset, many=True)
+        return JsonResponse(serializer.data, safe=False)
+
 class StockWorkerView(APIView):
     def get(self, request):
         queryset = Stock.objects.all()
@@ -131,6 +137,28 @@ class ClientView(APIView):
         return JsonResponse(serializer.data, safe=False)
 
 class ProductView(APIView):
+    def post(self, request):
+        serializer = ProductInfoSerializers(data=request.data)
+        if serializer.is_valid():
+            try:
+                product = Product.objects.create(
+                    StockNo=serializer.validated_data['StockNo'],
+                    ProductDate=serializer.validated_data['ProductDate'],
+                    ProductWorker=serializer.validated_data['ProductWorker'],
+                    WeightAfterWork=serializer.validated_data['WeightAfterWork'],
+                    LossWeight=serializer.validated_data['LossWeight'],
+                    ProductPrice=serializer.validated_data['ProductPrice'],
+                    DiscountRate=serializer.validated_data['DiscountRate'],
+                    ProductSituation=serializer.validated_data['ProductSituation'],
+                    Quantity=serializer.validated_data['Quantity']
+                )
+                product.save()
+                return JsonResponse({'message': '제품 생성 완료'}, status=status.HTTP_201_CREATED)
+            except Exception as e:
+                return JsonResponse({'error': e}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return JsonResponse({'error': '제품 생성 실패.' + str(Exception)}, status=status.HTTP_400_BAD_REQUEST)
+
     def get(self, request):
         product_data = Product.objects.all()
         serializer = ProductInfoSerializers(product_data, many=True)

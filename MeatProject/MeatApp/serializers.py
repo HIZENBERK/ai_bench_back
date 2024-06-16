@@ -64,6 +64,12 @@ class StockSerializers(serializers.ModelSerializer):
         model = Stock
         fields = '__all__'
 
+
+class StockInfoSerializers(serializers.ModelSerializer):
+    class Meta:
+        model = Stock
+        fields = ['StockNo']
+
 class StockWorkerSerializers(serializers.ModelSerializer):
     class Meta:
         model = Stock
