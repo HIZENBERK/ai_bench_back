@@ -292,7 +292,8 @@ class Product(models.Model):
         
     def was_published_recently(self):
         return self.created_at >= timezone.now() - datetime.timedelta(days=1)
-
+    class Meta:
+        ordering = ['-ProductDate']
 
 # 제품/재고 현황
 # class InventoryStatus(models.Model):

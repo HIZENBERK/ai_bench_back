@@ -143,7 +143,6 @@ class ProductView(APIView):
             try:
                 product = Product.objects.create(
                     StockNo=serializer.validated_data['StockNo'],
-                    ProductDate=serializer.validated_data['ProductDate'],
                     ProductWorker=serializer.validated_data['ProductWorker'],
                     WeightAfterWork=serializer.validated_data['WeightAfterWork'],
                     LossWeight=serializer.validated_data['LossWeight'],
@@ -155,7 +154,7 @@ class ProductView(APIView):
                 product.save()
                 return JsonResponse({'message': '제품 생성 완료'}, status=status.HTTP_201_CREATED)
             except Exception as e:
-                return JsonResponse({'error': e}, status=status.HTTP_400_BAD_REQUEST)
+                return JsonResponse({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         else:
             return JsonResponse({'error': '제품 생성 실패.' + str(Exception)}, status=status.HTTP_400_BAD_REQUEST)
 
