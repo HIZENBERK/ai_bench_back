@@ -30,5 +30,4 @@ urlpatterns = [
     path('logout/', views.LogoutView.as_view(), name='logout'),
     path('incoming/', views.IncomingPage, name='IncomingPage'),
     path('product/', views.ProductView.as_view(), name='product'),
-    path('product/delete/', views.ProductDeleteView.as_view(), name='product_delete'),
 ]

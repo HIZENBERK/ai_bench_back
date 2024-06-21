@@ -1,25 +1,19 @@
 from django.http import JsonResponse
 from django.shortcuts import render
-from django.utils.decorators import method_decorator
-from django.views.decorators.csrf import csrf_exempt
-from django.views.generic.edit import BaseDeleteView
 from rest_framework import viewsets, status, generics
 from rest_framework.authtoken.admin import User
 from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework_simplejwt.settings import api_settings
-from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
-from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
-from rest_framework_simplejwt.utils import datetime_from_epoch
+from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 
 from .models import User, Order, Stock, Product, Client, MeatPart
 from .serializers import Userserializers, OrderSerializers, StockSerializers, LoginSerializer, \
     MyTokenObtainPairSerializer, SingupSerializer, ClientSerializers, MeatPartSerializers, MeatPartInfoSerializers, \
     ClientInfoSerializers, OrderInfoSerializers, StockWorkerSerializers, ProductInfoSerializers, \
-    StockToProductSerializers, OrderToStockSerializers, StockInfoSerializers
+    StockToProductSerializers, OrderToStockSerializers, StockInfoSerializers, ProductSerializers, ProductDeleteSerializer
 
 
 def IncomingPage(request):
@@ -38,12 +32,6 @@ class OrderViewSet(viewsets.ModelViewSet):
 class StockViewSet(viewsets.ModelViewSet):
     queryset = Stock.objects.all()
     serializer_class = StockSerializers
-
-
-# class ProductViewSet(viewsets.ModelViewSet):
-#     queryset = Product.objects.all()
-#     serializer_class = ProductSerializers
-
 
 # 토큰을 이용한 회원가입
 class SignupView(APIView):
@@ -144,30 +132,44 @@ class ClientView(APIView):
 
 class ProductView(APIView):
     def post(self, request):
-        serializer = ProductInfoSerializers(data=request.data)
-        if serializer.is_valid():
-            try:
-                product = Product.objects.create(
-                    StockNo=serializer.validated_data['StockNo'],
-                    ProductWorker=serializer.validated_data['ProductWorker'],
-                    WeightAfterWork=serializer.validated_data['WeightAfterWork'],
-                    LossWeight=serializer.validated_data['LossWeight'],
-                    ProductPrice=serializer.validated_data['ProductPrice'],
-                    DiscountRate=serializer.validated_data['DiscountRate'],
-                    ProductSituation=serializer.validated_data['ProductSituation'],
-                    Quantity=serializer.validated_data['Quantity']
-                )
-                product.save()
-                return JsonResponse({'message': '제품 생성 완료'}, status=status.HTTP_201_CREATED)
-            except Exception as e:
-                return JsonResponse({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        else:
-            return JsonResponse({'error': '제품 생성 실패.' + str(Exception)}, status=status.HTTP_400_BAD_REQUEST)
+        if request.data['Method'] == 'post':
+            serializer = ProductSerializers(data=request.data)
+            if serializer.is_valid():
+                try:
+                    product = Product.objects.create(
+                        StockNo=serializer.validated_data['StockNo'],
+                        ProductWorker=serializer.validated_data['ProductWorker'],
+                        WeightAfterWork=serializer.validated_data['WeightAfterWork'],
+                        LossWeight=serializer.validated_data['LossWeight'],
+                        ProductPrice=serializer.validated_data['ProductPrice'],
+                        DiscountRate=serializer.validated_data['DiscountRate'],
+                        ProductSituation=serializer.validated_data['ProductSituation'],
+                        Quantity=serializer.validated_data['Quantity']
+                    )
+                    product.save()
+                    return JsonResponse({'message': '제품 생성 완료'}, status=status.HTTP_201_CREATED)
+                except Exception as e:
+                    return JsonResponse({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            else:
+                return JsonResponse({'error': '제품 시리얼라이즈 실패.'}, status=status.HTTP_400_BAD_REQUEST)
+        elif request.data['Method'] == 'delete':
+            serializer = ProductDeleteSerializer(data=request.data)
+            if serializer.is_valid():
+                try:
+                    productNo = serializer.validated_data.get('ProductNo')
+                    # productNo에 해당하는 Product 객체 가져오기
+                    product = get_object_or_404(Product, ProductNo=productNo)
+                    product.delete()
+                    return Response({'message': '제품 삭제 완료'}, status=status.HTTP_204_NO_CONTENT)
+                except Exception as e:
+                    return JsonResponse({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            else:
+                return JsonResponse({'error': '제품 시리얼라이즈 실패.'}, status=status.HTTP_400_BAD_REQUEST)
+
 
     def get(self, request):
         product_data = Product.objects.all()
         serializer = ProductInfoSerializers(product_data, many=True)
-
         for item in serializer.data:
             stock_no = item['StockNo']
             try:
@@ -202,22 +204,17 @@ class ProductView(APIView):
 
         return JsonResponse(serializer.data, safe=False)
 
-class ProductDeleteView(APIView):
-    def post(self, request):
-        serializer = ProductInfoSerializers(data=request.data)
-        if serializer.is_valid():
-            try:
-                productNo = request.data.get('ProductNo')
-                # productNo에 해당하는 Product 객체 가져오기
-                product = get_object_or_404(Product, ProductNo=productNo)
-                product.delete()
-                return JsonResponse({'message': '제품 삭제 완료'}, status=status.HTTP_204_NO_CONTENT)
-            except Product.DoesNotExist:
-                return JsonResponse({'error': '해당 제품이 존재하지 않습니다.'}, status=status.HTTP_404_NOT_FOUND)
-            except Exception as e:
-                return JsonResponse({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        else:
-            return JsonResponse(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+# class ProductDeleteView(APIView):
+#     def delete(self, request):
+#         serializer = ProductInfoSerializers(data=request.data)
+#         if serializer.is_valid():
+#             productNo = serializer.validated_data.get('ProductNo')
+#             # productNo에 해당하는 Product 객체 가져오기
+#             product = get_object_or_404(Product, ProductNo=productNo)
+#             product.delete()
+#             return Response({'message': '제품 삭제 완료'}, status=status.HTTP_204_NO_CONTENT)
+#         else:
+#             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 class MeatPartInfoView(APIView):
     def get(self, request):
         queryset = MeatPart.objects.all()

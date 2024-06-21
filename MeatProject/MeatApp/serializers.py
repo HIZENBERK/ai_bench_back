@@ -1,5 +1,4 @@
 from rest_framework import serializers
-from rest_framework.fields import ReadOnlyField
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 from .models import User, Order, Stock, Product, Client, MeatPart, DeliveryAccident, Purchase, OtherCost
@@ -47,13 +46,6 @@ class OrderInfoSerializers(serializers.ModelSerializer):
     class Meta:
         model = Order
         fields = '__all__'
-    # def get_part_name(self, obj):
-    #     try:
-    #         part = MeatPart.objects.get(code=obj.Part)
-    #         print(part.name)
-    #         return part.name
-    #     except MeatPart.DoesNotExist:
-    #         return None
 
 class StockSerializers(serializers.ModelSerializer):
     OrderNo = serializers.SlugRelatedField(queryset=Order.objects.all(), slug_field='OrderNo')
@@ -83,10 +75,21 @@ class StockToProductSerializers(serializers.ModelSerializer):
         model = Stock
         fields = ('OrderNo', 'StockNo','StockDate','StockWorker', 'Stockitem', 'RealWeight', 'RealPrice', 'MeterialNo', 'SlaugtherDate', 'UnitPrice')
 
+class ProductSerializers(serializers.ModelSerializer):
+    Method = serializers.CharField(max_length=10)
+    class Meta:
+        model = Product
+        fields = '__all__'
+
 class ProductInfoSerializers(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = '__all__'
+
+class ProductDeleteSerializer(serializers.Serializer):
+    ProductNo = serializers.CharField(max_length=30)
+    Method = serializers.CharField(max_length=10)
+
 
 class ClientSerializers(serializers.ModelSerializer):
     class Meta:
