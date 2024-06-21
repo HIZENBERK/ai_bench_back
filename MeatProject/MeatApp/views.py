@@ -1,12 +1,18 @@
 from django.http import JsonResponse
 from django.shortcuts import render
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
+from django.views.generic.edit import BaseDeleteView
 from rest_framework import viewsets, status, generics
 from rest_framework.authtoken.admin import User
 from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.settings import api_settings
+from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
+from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
+from rest_framework_simplejwt.utils import datetime_from_epoch
 from rest_framework_simplejwt.views import TokenObtainPairView
 
 from .models import User, Order, Stock, Product, Client, MeatPart
@@ -196,6 +202,22 @@ class ProductView(APIView):
 
         return JsonResponse(serializer.data, safe=False)
 
+class ProductDeleteView(APIView):
+    def post(self, request):
+        serializer = ProductInfoSerializers(data=request.data)
+        if serializer.is_valid():
+            try:
+                productNo = request.data.get('ProductNo')
+                # productNo에 해당하는 Product 객체 가져오기
+                product = get_object_or_404(Product, ProductNo=productNo)
+                product.delete()
+                return JsonResponse({'message': '제품 삭제 완료'}, status=status.HTTP_204_NO_CONTENT)
+            except Product.DoesNotExist:
+                return JsonResponse({'error': '해당 제품이 존재하지 않습니다.'}, status=status.HTTP_404_NOT_FOUND)
+            except Exception as e:
+                return JsonResponse({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return JsonResponse(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 class MeatPartInfoView(APIView):
     def get(self, request):
         queryset = MeatPart.objects.all()
@@ -227,10 +249,12 @@ class LoginView(APIView):
             if user and user.check_password(password):
                 if user.is_active:
                     refresh = RefreshToken.for_user(user)
-                    print(str(refresh.access_token))
+                    access_token = refresh.access_token
+                    # print('refresh : '+str(refresh))
+                    # print('access_token : '+str(access_token))
                     return JsonResponse({
                         'refresh': str(refresh),
-                        'access': str(refresh.access_token),
+                        'access': str(access_token),
                         'username': user.username,
                         'empNo': user.empNo,
                         'job': user.Job,
@@ -253,4 +277,4 @@ class LogoutView(APIView):
             token.blacklist()
             return Response({"message": "로그아웃 성공!"}, status=status.HTTP_205_RESET_CONTENT)
         except Exception as e:
-            return Response({"error": "잘못된 요청입니다."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "잘못된 요청입니다."+str(e)}, status=status.HTTP_400_BAD_REQUEST)

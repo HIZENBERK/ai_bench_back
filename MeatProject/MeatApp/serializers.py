@@ -14,7 +14,6 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
         token['Job'] = User.Job
         return token
 
-
 class Userserializers(serializers.ModelSerializer):
     class Meta:
         model = User
@@ -33,6 +32,7 @@ class MeatPartSerializers(serializers.ModelSerializer):
     class Meta:
         model = MeatPart
         fields = '__all__'
+
 class MeatPartInfoSerializers(serializers.ModelSerializer):
     class Meta:
         model = MeatPart
@@ -42,8 +42,6 @@ class OrderSerializers(serializers.ModelSerializer):
     class Meta:
         model = Order
         fields = '__all__'
-
-
 
 class OrderInfoSerializers(serializers.ModelSerializer):
     class Meta:
@@ -79,16 +77,17 @@ class OrderToStockSerializers(serializers.ModelSerializer):
     class Meta:
         model = Order
         fields = ('OrderNo', 'OrderDate', 'Client', 'OrderWeight', 'OrderPrice', 'Part')
+
 class StockToProductSerializers(serializers.ModelSerializer):
     class Meta:
         model = Stock
         fields = ('OrderNo', 'StockNo','StockDate','StockWorker', 'Stockitem', 'RealWeight', 'RealPrice', 'MeterialNo', 'SlaugtherDate', 'UnitPrice')
 
-
 class ProductInfoSerializers(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = '__all__'
+
 class ClientSerializers(serializers.ModelSerializer):
     class Meta:
         model = Client
@@ -98,9 +97,6 @@ class ClientInfoSerializers(serializers.ModelSerializer):
     class Meta:
         model = Client
         fields = ['ClientName']
-
-
-
 
 class DeliveryAccidentSerializers(serializers.ModelSerializer):
     class Meta:
