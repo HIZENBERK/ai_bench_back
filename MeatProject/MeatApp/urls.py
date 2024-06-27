@@ -1,4 +1,6 @@
 from django.urls import path, include
+from drf_yasg import openapi
+from drf_yasg.views import get_schema_view
 from rest_framework.routers import DefaultRouter
 from . import views
 from .views import LoginView, LogoutView
@@ -9,6 +11,19 @@ router = DefaultRouter()
 router.register(r'user', views.UserViewSet)
 router.register(r'order', views.OrderViewSet)
 router.register(r'stock', views.StockViewSet)
+
+schema_view = get_schema_view(
+   openapi.Info(
+      title="Snippets API",
+      default_version='v1',
+      description="Test description",
+      terms_of_service="https://www.google.com/policies/terms/",
+      contact=openapi.Contact(email="contact@snippets.local"),
+      license=openapi.License(name="BSD License"),
+   ),
+   validators=['flex', 'ssv'],
+   public=True,
+)
 
 urlpatterns = [
     path('', include(router.urls)),
@@ -30,4 +45,7 @@ urlpatterns = [
     path('logout/', views.LogoutView.as_view(), name='logout'),
     path('incoming/', views.IncomingPage, name='IncomingPage'),
     path('product/', views.ProductView.as_view(), name='product'),
+    path('swagger<str:format>', schema_view.without_ui(cache_timeout=0), name='schema-json'),
+    path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
+    path('docs/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
 ]
