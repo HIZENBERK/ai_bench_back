@@ -1,5 +1,7 @@
 from django.http import JsonResponse
 from django.shortcuts import render
+from drf_yasg import openapi
+from drf_yasg.utils import swagger_auto_schema
 from rest_framework import viewsets, status, generics
 from rest_framework.authtoken.admin import User
 from rest_framework.generics import get_object_or_404
@@ -114,7 +116,6 @@ class StockWorkerView(APIView):
     def get(self, request):
         queryset = Stock.objects.all()
         serializer = StockWorkerSerializers(queryset, many=True)
-        print(serializer.data)
         return JsonResponse(serializer.data, safe=False)
 
 
@@ -131,6 +132,59 @@ class ClientView(APIView):
         return JsonResponse(serializer.data, safe=False)
 
 class ProductView(APIView):
+    @swagger_auto_schema(
+        operation_id="제품 생성, 삭제, 수정",
+        operation_description="Create, update or delete a product based on the 'Method' field in the request body.",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'Method': openapi.Schema(type=openapi.TYPE_STRING, description="'post', 'put', or 'delete'"),
+                'StockNo': openapi.Schema(type=openapi.TYPE_INTEGER, description="Stock number"),
+                'ProductWorker': openapi.Schema(type=openapi.TYPE_STRING, description="Product worker"),
+                'WeightAfterWork': openapi.Schema(type=openapi.TYPE_NUMBER, description="Weight after work"),
+                'LossWeight': openapi.Schema(type=openapi.TYPE_NUMBER, description="Loss weight"),
+                'ProductPrice': openapi.Schema(type=openapi.TYPE_NUMBER, description="Product price"),
+                'DiscountRate': openapi.Schema(type=openapi.TYPE_NUMBER, description="Discount rate"),
+                'ProductSituation': openapi.Schema(type=openapi.TYPE_STRING, description="Product situation"),
+                'Quantity': openapi.Schema(type=openapi.TYPE_INTEGER, description="Quantity"),
+                'ProductNo': openapi.Schema(type=openapi.TYPE_INTEGER, description="Product number for delete method")
+            },
+            required=['Method']
+        ),
+        responses={
+            201: 'message: 제품 업데이트 완료',
+            204: 'message: 제품 삭제 완료',
+            400: 'Bad Request'
+        },
+        examples={
+            'post': {
+                'Method': 'post',
+                'StockNo': 1,
+                'ProductWorker': 'Worker1',
+                'WeightAfterWork': 50.5,
+                'LossWeight': 5.5,
+                'ProductPrice': 100.0,
+                'DiscountRate': 10,
+                'ProductSituation': 'New',
+                'Quantity': 10
+            },
+            'put': {
+                'Method': 'put',
+                'StockNo': 1,
+                'ProductWorker': 'Worker1',
+                'WeightAfterWork': 50.5,
+                'LossWeight': 5.5,
+                'ProductPrice': 100.0,
+                'DiscountRate': 10,
+                'ProductSituation': 'Updated',
+                'Quantity': 15
+            },
+            'delete': {
+                'Method': 'delete',
+                'ProductNo': 1
+            }
+        }
+    )
     def post(self, request):
         if request.data['Method'] == 'post':
             serializer = ProductSerializers(data=request.data)
@@ -165,8 +219,31 @@ class ProductView(APIView):
                     return JsonResponse({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
             else:
                 return JsonResponse({'error': '제품 시리얼라이즈 실패.'}, status=status.HTTP_400_BAD_REQUEST)
+        elif request.data['Method'] == 'put':
+            serializer = ProductSerializers(data=request.data)
+            if serializer.is_valid():
+                try:
+                    product = Product.objects.create(
+                        StockNo=serializer.validated_data['StockNo'],
+                        ProductWorker=serializer.validated_data['ProductWorker'],
+                        WeightAfterWork=serializer.validated_data['WeightAfterWork'],
+                        LossWeight=serializer.validated_data['LossWeight'],
+                        ProductPrice=serializer.validated_data['ProductPrice'],
+                        DiscountRate=serializer.validated_data['DiscountRate'],
+                        ProductSituation=serializer.validated_data['ProductSituation'],
+                        Quantity=serializer.validated_data['Quantity']
+                    )
+                    product.save()
+                    return JsonResponse({'message': '제품 업데이트 완료'}, status=status.HTTP_201_CREATED)
+                except Exception as e:
+                    return JsonResponse({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            else:
+                return JsonResponse({'error': '제품 시리얼라이즈 실패.'}, status=status.HTTP_400_BAD_REQUEST)
 
-
+    @swagger_auto_schema(
+        operation_description="생성된 제품 정보 불러오기",
+        responses={200: ProductInfoSerializers(many=True)}
+    )
     def get(self, request):
         product_data = Product.objects.all()
         serializer = ProductInfoSerializers(product_data, many=True)
