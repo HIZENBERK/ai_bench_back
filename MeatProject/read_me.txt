@@ -14,6 +14,9 @@ django
 djangorestframework
 djangorestframework-simplejwt
 django-cors-headers
+drf_yasg
+setuptools
+
 
 설치 이후
 jprivate_setting.py를 settings.py와 같은 폴더에 옮기고
