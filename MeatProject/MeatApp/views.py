@@ -139,15 +139,15 @@ class ProductView(APIView):
             type=openapi.TYPE_OBJECT,
             properties={
                 'Method': openapi.Schema(type=openapi.TYPE_STRING, description="'post', 'put', or 'delete'"),
-                'StockNo': openapi.Schema(type=openapi.TYPE_INTEGER, description="Stock number"),
+                'StockNo': openapi.Schema(type=openapi.TYPE_STRING, description="Stock number"),
                 'ProductWorker': openapi.Schema(type=openapi.TYPE_STRING, description="Product worker"),
-                'WeightAfterWork': openapi.Schema(type=openapi.TYPE_NUMBER, description="Weight after work"),
-                'LossWeight': openapi.Schema(type=openapi.TYPE_NUMBER, description="Loss weight"),
-                'ProductPrice': openapi.Schema(type=openapi.TYPE_NUMBER, description="Product price"),
-                'DiscountRate': openapi.Schema(type=openapi.TYPE_NUMBER, description="Discount rate"),
+                'WeightAfterWork': openapi.Schema(type=openapi.TYPE_STRING, description="Weight after work"),
+                'LossWeight': openapi.Schema(type=openapi.TYPE_STRING, description="Loss weight"),
+                'ProductPrice': openapi.Schema(type=openapi.TYPE_STRING, description="Product price"),
+                'DiscountRate': openapi.Schema(type=openapi.TYPE_STRING, description="Discount rate"),
                 'ProductSituation': openapi.Schema(type=openapi.TYPE_STRING, description="Product situation"),
-                'Quantity': openapi.Schema(type=openapi.TYPE_INTEGER, description="Quantity"),
-                'ProductNo': openapi.Schema(type=openapi.TYPE_INTEGER, description="Product number for delete method")
+                'Quantity': openapi.Schema(type=openapi.TYPE_STRING, description="Quantity"),
+                'ProductNo': openapi.Schema(type=openapi.TYPE_STRING, description="Product number for delete method")
             },
             required=['Method']
         ),
@@ -313,6 +313,43 @@ class RegisterView(generics.CreateAPIView):
     serializer_class = SingupSerializer
 
 class LoginView(APIView):
+    @swagger_auto_schema(
+        operation_id="로그인",
+        operation_description="사원 번호, 비밀번호로 로그인 시 토큰값 반환",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'empNo': openapi.Schema(type=openapi.TYPE_STRING, description="employee number"),
+                'password': openapi.Schema(type=openapi.TYPE_STRING, description="Pass word"),
+            },
+            required=['empNo', 'password']
+        ),
+        responses={
+            201:  openapi.Response(
+                description="로그인 성공",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'refresh': openapi.Schema(type=openapi.TYPE_STRING, description='Refresh token'),
+                        'access': openapi.Schema(type=openapi.TYPE_STRING, description='Access token'),
+                        'username': openapi.Schema(type=openapi.TYPE_STRING, description='Username'),
+                        'empNo': openapi.Schema(type=openapi.TYPE_STRING, description='Employee number'),
+                        'job': openapi.Schema(type=openapi.TYPE_STRING, description='Job title'),
+                        'position': openapi.Schema(type=openapi.TYPE_STRING, description='Position'),
+                    }
+                )
+            ),
+            400: openapi.Response(description='잘못된 요청',examples={'application/json': {'serializer.errors': 'error message'}}),
+            401: openapi.Response(description='잘못된 자격 증명',examples={'application/json': {'error': 'Invalid credentials'}}),
+            403: openapi.Response(description='비활성 사용자', examples={'application/json': {'error': 'Inactive user'}}),
+        },
+        examples={
+            'post': {
+                'empNo': 12345,
+                'password': 'los23452',
+            }
+        }
+    )
     def post(self, request):
         serializer = LoginSerializer(data=request.data)
         if serializer.is_valid():
@@ -344,6 +381,26 @@ class LoginView(APIView):
 class LogoutView(APIView):
     permission_classes = (IsAuthenticated,)
 
+    @swagger_auto_schema(
+        operation_id="로그아웃",
+        operation_description="토큰 번호로 로그아웃 시 로그아웃 성공 ",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'refresh_token': openapi.Schema(type=openapi.TYPE_STRING, description="refresh_token"),
+            },
+            required=['refresh_token']
+        ),
+        responses={
+            205: openapi.Response(description='로그아웃 성공', examples={'application/json': {'serializer.message': '로그아웃 성공!'}}),
+            400: openapi.Response(description='잘못된 요청입니다.', examples={'application/json': {'serializer.errors': "잘못된 요청입니다. + string"}})
+        },
+        examples={
+            'post': {
+                'refresh_token': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c',
+            }
+        }
+    )
     def post(self, request):
         try:
             refresh_token = request.data["refresh_token"]
