@@ -220,25 +220,20 @@ class ProductView(APIView):
             else:
                 return JsonResponse({'error': '제품 시리얼라이즈 실패.'}, status=status.HTTP_400_BAD_REQUEST)
         elif request.data['Method'] == 'put':
-            serializer = ProductSerializers(data=request.data)
+            productNo = request.data.get('ProductNo')
+            if not productNo:
+                return JsonResponse({'error': 'ProductNo is required for updating a product.'}, status=status.HTTP_400_BAD_REQUEST)
+            try:
+                product = Product.objects.get(ProductNo=productNo)
+            except Product.DoesNotExist:
+                return JsonResponse({'error': '제품을 찾지 못하였습니다.'}, status=status.HTTP_404_NOT_FOUND)
+
+            serializer = ProductSerializers(product, data=request.data, partial=True)
             if serializer.is_valid():
-                try:
-                    product = Product.objects.create(
-                        StockNo=serializer.validated_data['StockNo'],
-                        ProductWorker=serializer.validated_data['ProductWorker'],
-                        WeightAfterWork=serializer.validated_data['WeightAfterWork'],
-                        LossWeight=serializer.validated_data['LossWeight'],
-                        ProductPrice=serializer.validated_data['ProductPrice'],
-                        DiscountRate=serializer.validated_data['DiscountRate'],
-                        ProductSituation=serializer.validated_data['ProductSituation'],
-                        Quantity=serializer.validated_data['Quantity']
-                    )
-                    product.save()
-                    return JsonResponse({'message': '제품 업데이트 완료'}, status=status.HTTP_201_CREATED)
-                except Exception as e:
-                    return JsonResponse({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+                serializer.save()
+                return JsonResponse({'message': '제품 업데이트 완료'}, status=status.HTTP_200_OK)
             else:
-                return JsonResponse({'error': '제품 시리얼라이즈 실패.'}, status=status.HTTP_400_BAD_REQUEST)
+                return JsonResponse({'error': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
     @swagger_auto_schema(
         operation_description="생성된 제품 정보 불러오기",
