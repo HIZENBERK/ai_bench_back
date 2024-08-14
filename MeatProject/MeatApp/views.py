@@ -219,6 +219,7 @@ class ProductView(APIView):
                     return JsonResponse({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
             else:
                 return JsonResponse({'error': '제품 시리얼라이즈 실패.'}, status=status.HTTP_400_BAD_REQUEST)
+
         elif request.data['Method'] == 'put':
             productNo = request.data.get('ProductNo')
             if not productNo:
