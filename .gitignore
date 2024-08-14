@@ -12,3 +12,4 @@ MeatProject/MeatApp/migrations/__pycache__
 MeatProject/__pycache__
 MeatProject/MeatProject/__pycache__
 .idea/django.iml
+.idea/workspace.xml

@@ -79,6 +79,7 @@ class OrderView(APIView):
                 return JsonResponse({'error': '부위 참조 생성 실패.'}, status=status.HTTP_400_BAD_REQUEST)
         else:
             return JsonResponse({'error': '발주 생성 실패.'}, status=status.HTTP_400_BAD_REQUEST)
+
     def get(self, request):
         queryset = Order.objects.all()
         serializer = OrderInfoSerializers(queryset, many=True)
