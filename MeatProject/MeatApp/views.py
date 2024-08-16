@@ -60,25 +60,45 @@ class SignupView(APIView):
 
 class OrderView(APIView):
     def post(self, request):
-        serializer = OrderSerializers(data=request.data)
-        if serializer.is_valid():
+        if request.data['Method'] == 'post':
+            serializer = OrderSerializers(data=request.data)
+            if serializer.is_valid():
+                try:
+                    order = Order.objects.create(
+                        Part=serializer.validated_data['Part'], # MeatPart의 code를 Order의 Part에 할당
+                        OrderDate=serializer.validated_data['OrderDate'],
+                        OrderWorker=serializer.validated_data['OrderWorker'],
+                        ETA=serializer.validated_data['ETA'],
+                        Client=serializer.validated_data['Client'],
+                        OrderWeight=serializer.validated_data['OrderWeight'],
+                        OrderPrice=serializer.validated_data['OrderPrice'],
+                        OrderNo=serializer.validated_data['OrderNo'],
+                        OrderSituation='발주완료'  # 상태
+                    )
+                    order.save()
+                    return JsonResponse({'message': '발주 생성 완료'}, status=status.HTTP_201_CREATED)
+                except MeatPart.DoesNotExist:
+                    return JsonResponse({'error': '부위 참조 생성 실패.'}, status=status.HTTP_400_BAD_REQUEST)
+                except Exception as e:
+                    return JsonResponse({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            else:
+                return JsonResponse({'error': '발주 생성 실패.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        elif request.data['Method'] == 'put':
+            OrderNo = request.data.get("OrderNo")
+            if not OrderNo:
+                return JsonResponse({'error': 'OrderNo is required for updating a product'}, status=status.HTTP_400_BAD_REQUEST)
             try:
-                order = Order.objects.create(
-                    Part=serializer.validated_data['Part'], # MeatPart의 code를 Order의 Part에 할당
-                    OrderDate=serializer.validated_data['OrderDate'],
-                    OrderWorker=serializer.validated_data['OrderWorker'],
-                    ETA=serializer.validated_data['ETA'],
-                    Client=serializer.validated_data['Client'],
-                    OrderWeight=serializer.validated_data['OrderWeight'], 
-                    OrderPrice=serializer.validated_data['OrderPrice'],
-                    OrderSituation='발주완료'  # 상태
-                )
-                order.save()
-                return JsonResponse({'message': '발주 생성 완료'}, status=status.HTTP_201_CREATED)
-            except MeatPart.DoesNotExist:
-                return JsonResponse({'error': '부위 참조 생성 실패.'}, status=status.HTTP_400_BAD_REQUEST)
-        else:
-            return JsonResponse({'error': '발주 생성 실패.'}, status=status.HTTP_400_BAD_REQUEST)
+                order = Order.objects.get(OrderNo=OrderNo)
+            except Order.DoesNotExist:
+                return JsonResponse({'error': 'Order does not exist'}, status=status.HTTP_400_BAD_REQUEST)
+
+            serializer = OrderSerializers(order, data=request.data, partial=True)
+            if serializer.is_valid():
+                serializer.save(author=request.user)
+                return JsonResponse({'message': '발주 업데이트 완료'}, status=status.HTTP_200_OK)
+            else:
+                return JsonResponse({'error': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
     def get(self, request):
         queryset = Order.objects.all()
