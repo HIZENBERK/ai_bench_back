@@ -70,6 +70,10 @@ class OrderToStockSerializers(serializers.ModelSerializer):
         model = Order
         fields = ('OrderNo', 'OrderDate', 'Client', 'OrderWeight', 'OrderPrice', 'Part')
 
+class OrderDeleteSerializers(serializers.Serializer):
+    OrderNo = serializers.CharField(max_length=30)
+    Method = serializers.CharField(max_length=30)
+
 class StockToProductSerializers(serializers.ModelSerializer):
     class Meta:
         model = Stock

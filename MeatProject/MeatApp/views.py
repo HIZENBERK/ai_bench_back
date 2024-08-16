@@ -15,7 +15,7 @@ from .models import User, Order, Stock, Product, Client, MeatPart
 from .serializers import Userserializers, OrderSerializers, StockSerializers, LoginSerializer, \
     MyTokenObtainPairSerializer, SingupSerializer, ClientSerializers, MeatPartSerializers, MeatPartInfoSerializers, \
     ClientInfoSerializers, OrderInfoSerializers, StockWorkerSerializers, ProductInfoSerializers, \
-    StockToProductSerializers, OrderToStockSerializers, StockInfoSerializers, ProductSerializers, ProductDeleteSerializer
+    StockToProductSerializers, OrderToStockSerializers, StockInfoSerializers, ProductSerializers, ProductDeleteSerializer, OrderDeleteSerializers
 
 
 def IncomingPage(request):
@@ -72,7 +72,7 @@ class OrderView(APIView):
                         Client=serializer.validated_data['Client'],
                         OrderWeight=serializer.validated_data['OrderWeight'],
                         OrderPrice=serializer.validated_data['OrderPrice'],
-                        OrderNo=serializer.validated_data['OrderNo'],
+                        StockNo=serializer.validated_data['StockNo'],
                         OrderSituation='발주완료'  # 상태
                     )
                     order.save()
@@ -83,6 +83,19 @@ class OrderView(APIView):
                     return JsonResponse({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
             else:
                 return JsonResponse({'error': '발주 생성 실패.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        elif request.data['Method'] == 'delete':
+            serializer = OrderDeleteSerializers(data=request.data)
+            if serializer.is_valid():
+                try:
+                    OrderNo = serializer.validated_data.get('OrderNo')
+                    order = get_object_or_404(Order, OrderNo=OrderNo)
+                    order.delete()
+                    return Response({'message': '발주 삭제 완료'}, status=status.HTTP_204_NO_CONTENT)
+                except Exception as e:
+                    return JsonResponse({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            else:
+                return JsonResponse({'error': '제품 시리얼라이즈 실패'}, status=status.HTTP_400_BAD_REQUEST)
 
         elif request.data['Method'] == 'put':
             OrderNo = request.data.get("OrderNo")
@@ -95,10 +108,11 @@ class OrderView(APIView):
 
             serializer = OrderSerializers(order, data=request.data, partial=True)
             if serializer.is_valid():
-                serializer.save(author=request.user)
+                serializer.save()
                 return JsonResponse({'message': '발주 업데이트 완료'}, status=status.HTTP_200_OK)
             else:
                 return JsonResponse({'error': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
 
     def get(self, request):
         queryset = Order.objects.all()
