@@ -7,6 +7,9 @@
 MeatProject/MeatProject/private_settings.py
 MeatProject/MeatApp/__pycache__
 .venv
+meat
 MeatProject/MeatApp/migrations/__pycache__
 MeatProject/__pycache__
 MeatProject/MeatProject/__pycache__
+.idea/django.iml
+.idea/workspace.xml

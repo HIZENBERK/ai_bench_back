@@ -201,6 +201,18 @@ class Order(models.Model):
             except Exception as e:
                 order_count = 1
 
+        #if self.instance is not None:
+        #     self.instance = self.update(self.instance, validated_data= request.data)
+        #     assert self.instance is not None, (
+        #         '`update()` did not return an object instance.'
+        #     )
+        #else:
+        #     self.instance = self.create(validated_data= request.data)
+        #     assert self.instance is not None, (
+        #         '`create()` did not return an object instance.'
+        #     )
+        #     return self.instance
+
             # 발주번호 생성
             self.OrderNo = f"{year}{month}{day}{day_of_week}{part_number}{client_number}{order_count:04d}"
         super().save(*args, **kwargs)
@@ -303,12 +315,11 @@ class Product(models.Model):
 # 주문/주문 등록(order와 겹쳐서 purchase로 설정함)
 class Purchase(models.Model):
     ID = models.AutoField(primary_key=True)  # 번호
-    #ProductNo = models.ForeignKey("Product", on_delete=models.CASCADE, db_column="ProductNo")  # 제품 번호 (외래키, 이걸로 제품명, 가격 등등 가져올것)
     PurchaseDate = models.DateTimeField(auto_now_add=True)  # 등록일(요일)
-    # 구분이 뭔지 모르겠음 -> 주문 진행 상태 말하는 것 같음 임시로 하나 만듬
-    PurchaseStep = models.CharField(max_length=10)
-    Purchaser = models.ForeignKey(User, on_delete=models.CASCADE, db_column="Purchaser")  # 주문자(로그인한 계정명으로 가져올것)
+    PurchaseStep = models.CharField(max_length=10)  # 구분
+    Purchaser = models.CharField(max_length=100)  # 주문자
     PurchaseAddress = models.CharField(max_length=100)  # 주소
+    PurchaseAddressDetail = models.CharField(max_length=100)  # 상세 주소
     PurchasePhone = models.CharField(max_length=15)  # 연락처
     PurchaseNo = models.CharField(max_length=10, blank=True, unique=True)  # 주문 번호
     Wrapping = models.BooleanField(default=False)  # 선물포장 여부
@@ -318,16 +329,13 @@ class Purchase(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.PurchaseNo:
-            last_number = Purchase.objects.order_by('-PurchaseNo').first()
-            if last_number:
-                next_number = str(int(last_number.number) + 1).zfill(5)
+            last_purchase = Purchase.objects.order_by('-ID').first()
+            if last_purchase and last_purchase.PurchaseNo.isdigit():
+                next_number = str(int(last_purchase.PurchaseNo) + 1).zfill(5)
             else:
                 next_number = '00001'
             self.PurchaseNo = next_number
         super(Purchase, self).save(*args, **kwargs)
-
-    def was_published_recently(self):
-        return self.created_at >= timezone.now() - datetime.timedelta(days=1)
 
 
 # 주문/작업지시서

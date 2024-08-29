@@ -51,3 +51,10 @@ rm db.sqlite3 명령어로 sql파일부터 날리고 다시 마이그레이션
 
 23.06.10 추가사항
 모델 수정
+
+// 마이그레이션 생성 및 적용
+python manage.py makemigrations
+python manage.py migrate
+--> 데이터베이스 스키마에 필요한 변경사항 포함된 마이그레이션 파일 생성
+--> 데이터베이스에 변경 사항 적용
+--> 터미널에 실행 후 서버 키기

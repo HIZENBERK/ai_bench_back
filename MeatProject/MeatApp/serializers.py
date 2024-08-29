@@ -37,10 +37,42 @@ class MeatPartInfoSerializers(serializers.ModelSerializer):
         model = MeatPart
         fields = ['name', 'code']
 
+# class OrderSerializers(serializers.ModelSerializer):
+#     class Meta:
+#         model = Order
+#         fields = '__all__'
+
+
+class RegisterSerializers(serializers.ModelSerializer):
+    class Meta:
+        model = Purchase
+        fields = '__all__'
+
+class RegisterDeleteSerializers(serializers.ModelSerializer):
+    PurchaseNo = serializers.CharField(max_length=30)
+    Method = serializers.CharField(max_length=10)
+
+    class Meta:
+        model = Purchase
+        fields = ['PurchaseNo', 'Method']
+
+
 class OrderSerializers(serializers.ModelSerializer):
     class Meta:
         model = Order
-        fields = '__all__'
+        fields = ['OrderNo', 'Part', 'OrderDate', 'OrderWorker', 'ETA', 'Client', 'OrderWeight', 'OrderPrice', 'OrderSituation']
+        read_only_fields = ['OrderNo']
+
+    def validate(self, data):
+        # Add any custom validation logic here, if needed
+        return data
+
+class OrderUpdateSerializers(serializers.ModelSerializer):
+    # OrderNo = serializers.CharField(max_length=255)
+    class Meta:
+        model = Order
+        fields = ['OrderNo', 'Part', 'OrderDate', 'OrderWorker', 'ETA', 'Client', 'OrderWeight', 'OrderPrice', 'OrderSituation']
+        read_only_fields = ['OrderNo']
 
 class OrderInfoSerializers(serializers.ModelSerializer):
     class Meta:
@@ -49,11 +81,9 @@ class OrderInfoSerializers(serializers.ModelSerializer):
 
 class StockSerializers(serializers.ModelSerializer):
     OrderNo = serializers.SlugRelatedField(queryset=Order.objects.all(), slug_field='OrderNo')
-    
     class Meta:
         model = Stock
         fields = '__all__'
-
 
 class StockInfoSerializers(serializers.ModelSerializer):
     class Meta:
@@ -69,6 +99,10 @@ class OrderToStockSerializers(serializers.ModelSerializer):
     class Meta:
         model = Order
         fields = ('OrderNo', 'OrderDate', 'Client', 'OrderWeight', 'OrderPrice', 'Part')
+
+class OrderDeleteSerializers(serializers.Serializer):
+    OrderNo = serializers.CharField(max_length=255)
+    # Method = serializers.CharField(max_length=10)
 
 class StockToProductSerializers(serializers.ModelSerializer):
     class Meta:
