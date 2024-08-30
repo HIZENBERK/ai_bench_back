@@ -322,7 +322,10 @@ class Purchase(models.Model):
     PurchaseAddressDetail = models.CharField(max_length=100)  # 상세 주소
     PurchasePhone = models.CharField(max_length=15)  # 연락처
     PurchaseNo = models.CharField(max_length=10, blank=True, unique=True)  # 주문 번호
-    Wrapping = models.BooleanField(default=False)  # 선물포장 여부
+    Wrapping = models.BooleanField(max_length=10)  # 선물포장 여부
+    PurchaserName = models.CharField(max_length=100, blank=True, null=True) # 제품명
+    PurchaserPrice = models.CharField(max_length=100, blank=True, null=True) # 가격
+
 
     def __str__(self):
         return str(self.PurchaseNo)
@@ -336,7 +339,6 @@ class Purchase(models.Model):
                 next_number = '00001'
             self.PurchaseNo = next_number
         super(Purchase, self).save(*args, **kwargs)
-
 
 # 주문/작업지시서
 # class WorkOrder(models.Model):

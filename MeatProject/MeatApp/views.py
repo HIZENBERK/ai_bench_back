@@ -346,8 +346,21 @@ class RegisterView(APIView):
                         PurchaseNo=serializer.validated_data['PurchaseNo'],
                         PurchasePhone=serializer.validated_data['PurchasePhone'],
                         Wrapping=serializer.validated_data['Wrapping'],
+                        #PurchaserName=serializer.validated_data['PurchaserName'],
+                        #PurchaserPrice=serializer.validated_data['PurchaserPrice'],
                     )
                     register.save()
+
+                    puchaser_items = request.data.get('PurchaserItems', [])
+                    for item in puchaser_items:
+                        Purchase_name = item.get('PurchaseName', '')
+                        Purchase_price = item.get('PurchasePrice', '')
+
+                        Purchase.objects.create(
+                            PurchaserName=Purchase_name,
+                            PurchaserPrice=Purchase_price,
+                            Purchase=register
+                        )
                     return JsonResponse(serializer.data, status=status.HTTP_201_CREATED)
                 except Exception as e:
                     return JsonResponse({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
