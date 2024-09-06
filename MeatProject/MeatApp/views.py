@@ -339,6 +339,7 @@ class RegisterView(APIView):
             if serializer.is_valid():
                 try:
                     register = Purchase.objects.create(
+                        PurchaseDate=serializer.validated_data['PurchaseDate'],
                         PurchaseStep=serializer.validated_data['PurchaseStep'],
                         Purchaser=serializer.validated_data['Purchaser'],
                         PurchaseAddress=serializer.validated_data['PurchaseAddress'],
@@ -368,6 +369,25 @@ class RegisterView(APIView):
                     return JsonResponse({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
             else:
                 return JsonResponse({'error': '제품 시리얼라이즈 실패.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        elif request.data['Method'] == 'put':
+            PurchaseNo = request.data.get('PurchaseNo')
+            if not PurchaseNo:
+                return JsonResponse({'error': '수정실패'}, status=status.HTTP_400_BAD_REQUEST)
+            try:
+                register = Purchase.objects.get(PurchaseNo=PurchaseNo)
+            except Purchase.DoesNotExist:
+                return JsonResponse({'error': '제품을 찾지 못하였습니다'}, status=status.HTTP_404_NOT_FOUND)
+
+            serializer = RegisterSerializers(register, data=request.data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                return JsonResponse({'message': '수정완료'},status=status.HTTP_200_OK)
+            else:
+                return JsonResponse({'error': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+
+
 
     def get(self, request):
         queryset = Purchase.objects.all()

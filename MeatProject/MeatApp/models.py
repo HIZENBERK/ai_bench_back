@@ -315,7 +315,7 @@ class Product(models.Model):
 # 주문/주문 등록(order와 겹쳐서 purchase로 설정함)
 class Purchase(models.Model):
     ID = models.AutoField(primary_key=True)  # 번호
-    PurchaseDate = models.DateTimeField(auto_now_add=True)  # 등록일(요일)
+    PurchaseDate = models.DateTimeField()  # 등록일(요일)
     PurchaseStep = models.CharField(max_length=10)  # 구분
     Purchaser = models.CharField(max_length=100)  # 주문자
     PurchaseAddress = models.CharField(max_length=100)  # 주소
